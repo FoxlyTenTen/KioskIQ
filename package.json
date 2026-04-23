@@ -1,0 +1,62 @@
+{
+  "name": "kioskiq",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names \"UI,Orch,Itin,Weather,Rest,Budget,Product,Coach,DB,Plan,Summary,Feas,Inv\" --prefix-colors \"cyan,gray,green,blue,blue,blue,magenta,yellow,red,purple,magenta,yellow,green\" \"npm run dev:ui\" \"npm run dev:orchestrator\" \"npm run dev:itinerary\" \"npm run dev:weather\" \"npm run dev:restaurant\" \"npm run dev:budget\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\"",
+    "dev:ui": "next dev --turbopack",
+    "dev:orchestrator": "agents\\.venv\\Scripts\\python agents/orchestrator.py",
+    "dev:itinerary": "agents\\.venv\\Scripts\\python agents/itinerary_agent.py",
+    "dev:weather": "agents\\.venv\\Scripts\\python agents/weather_agent.py",
+    "dev:restaurant": "agents\\.venv\\Scripts\\python agents/restaurant_agent.py",
+    "dev:budget": "agents\\.venv\\Scripts\\python agents/budget_agent.py",
+    "dev:product": "agents\\.venv\\Scripts\\python agents/product_agent.py",
+    "dev:coach": "agents\\.venv\\Scripts\\python agents/coach_agent.py",
+    "dev:database": "agents\\.venv\\Scripts\\python agents/database_agent.py",
+    "dev:planner": "agents\\.venv\\Scripts\\python agents/financial_planner_agent.py",
+    "dev:summary": "agents\\.venv\\Scripts\\python agents/summary_agent.py",
+    "dev:feasibility": "agents\\.venv\\Scripts\\python agents/feasibility_agent.py",
+    "dev:investment": "agents\\.venv\\Scripts\\python agents/investment_agent.py",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@a2a-js/sdk": "latest",
+    "@ag-ui/a2a-middleware": "0.0.2",
+    "@ag-ui/client": "0.0.40",
+    "@copilotkit/react-core": "latest",
+    "@copilotkit/react-ui": "latest",
+    "@copilotkit/runtime": "latest",
+    "@phosphor-icons/react": "^2.1.10",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dedent": "^1.7.0",
+    "lucide-react": "^0.477.0",
+    "mongodb": "^6.21.0",
+    "next": "^16.1.4",
+    "next-themes": "^0.4.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^9.1.2",
+    "eslint": "^8",
+    "eslint-config-next": "15.1.6",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "@ag-ui/client": "0.0.40"
+  }
+}
