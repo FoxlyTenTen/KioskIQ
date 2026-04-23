@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * Travel Chat Component
+ * Financial Planning Chat Component
  *
  * Demonstrates key patterns:
  * - A2A Communication: Visualizes message flow between orchestrator and agents
- * - HITL: Trip requirements form and budget approval workflows
+ * - HITL: Financial planning form workflows
  * - Generative UI: Extracts structured data from agent responses
- * - Multi-Agent: Coordinates 4 agents across LangGraph + ADK via A2A Protocol
- * The RIGHT PANEL 
+ * - Multi-Agent: Coordinates agents across ADK via A2A Protocol
  */
 
 import React, { useState, useEffect } from "react";
@@ -19,10 +18,6 @@ import "@copilotkit/react-ui/styles.css";
 import "./style.css";
 import type {
   TravelChatProps,
-  ItineraryData,
-  BudgetData,
-  WeatherData,
-  RestaurantData,
   ProductResearchData,
   MessageActionRenderProps,
   FinancialPlanData,
@@ -48,10 +43,6 @@ import { useCoAgent } from "@copilotkit/react-core";
 
 const ChatInner = (props: TravelChatProps) => {
   const {
-    onItineraryUpdate,
-    onBudgetUpdate,
-    onWeatherUpdate,
-    onRestaurantUpdate,
     onProductUpdate,
     onFinancialPlanUpdate,
     onMasterPlanUpdate,
@@ -103,10 +94,7 @@ const ChatInner = (props: TravelChatProps) => {
       props.onInvestmentUpdate?.(financialState.investment);
     }
   }, [financialState]);
-  const [approvalStates, setApprovalStates] = useState<
-    Record<string, { approved: boolean; rejected: boolean }>
-  >({});
-  // const [productData, setProductData] = useState<ProductResearchData | null>(null); // Removed local state
+  
   const { visibleMessages } = useCopilotChat();
 
   // Extract structured data from A2A agent responses
@@ -131,32 +119,7 @@ const ChatInner = (props: TravelChatProps) => {
             }
 
             if (parsed) {
-              if (parsed.destination && parsed.itinerary && Array.isArray(parsed.itinerary)) {
-                onItineraryUpdate?.(parsed as ItineraryData);
-              }
-              else if ((parsed.totalBudget || parsed.total_budget) && parsed.breakdown && Array.isArray(parsed.breakdown)) {
-                const valTotal = parsed.totalBudget || parsed.total_budget;
-                const budgetKey = `budget-${valTotal}`;
-                const isApproved = approvalStates[budgetKey]?.approved || false;
-                if (isApproved) {
-                  // Transform to BudgetData (camelCase)
-                  const budgetData: BudgetData = {
-                    totalBudget: valTotal,
-                    currency: parsed.currency || "USD",
-                    breakdown: parsed.breakdown,
-                    notes: parsed.notes || ""
-                  };
-                  onBudgetUpdate?.(budgetData);
-                }
-              }
-              else if (parsed.destination && parsed.forecast && Array.isArray(parsed.forecast)) {
-                const weatherDataParsed = parsed as WeatherData;
-                onWeatherUpdate?.(weatherDataParsed);
-              }
-              else if (parsed.destination && parsed.meals && Array.isArray(parsed.meals)) {
-                onRestaurantUpdate?.(parsed as RestaurantData);
-              }
-              else if (parsed.query && parsed.results && Array.isArray(parsed.results)) {
+              if (parsed.query && parsed.results && Array.isArray(parsed.results)) {
                 onProductUpdate?.(parsed as ProductResearchData);
               }
               else if (parsed.monthlyIncome && parsed.budgetBreakdown && Array.isArray(parsed.budgetBreakdown)) {
@@ -192,11 +155,6 @@ const ChatInner = (props: TravelChatProps) => {
     extractDataFromMessages();
   }, [
     visibleMessages,
-    approvalStates,
-    onItineraryUpdate,
-    onBudgetUpdate,
-    onWeatherUpdate,
-    onRestaurantUpdate,
     onProductUpdate,
     onFinancialPlanUpdate,
     onMasterPlanUpdate,

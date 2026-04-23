@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { type ItineraryData, type BudgetData, type WeatherData, type RestaurantData, type ProductResearchData, type FinancialPlanData, type MasterFinancialPlanData, type SummaryPlanData, type FeasibilityData, type InvestmentStrategyData } from "@/components/types";
-import { ItineraryCard } from "@/components/ItineraryCard";
-import { BudgetBreakdown } from "@/components/BudgetBreakdown";
-import { WeatherCard } from "@/components/WeatherCard";
+import { type ProductResearchData, type FinancialPlanData, type MasterFinancialPlanData, type SummaryPlanData, type FeasibilityData, type InvestmentStrategyData } from "@/components/types";
 import { ProductCard } from "@/components/ProductCard";
 import { FinancialPlanCard } from "@/components/FinancialPlanCard";
 import { MasterPlanCard } from "@/components/MasterPlanCard";
@@ -20,10 +17,6 @@ const TravelChat = dynamic(() => import("@/components/travel-chat"), {
 });
 
 export default function PlanningPage() {
-  const [itineraryData, setItineraryData] = useState<ItineraryData | null>(null);
-  const [budgetData, setBudgetData] = useState<BudgetData | null>(null);
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-  const [restaurantData, setRestaurantData] = useState<RestaurantData | null>(null);
   const [productData, setProductData] = useState<ProductResearchData | null>(null);
   const [financialPlanData, setFinancialPlanData] = useState<FinancialPlanData | null>(null);
   const [masterPlanData, setMasterPlanData] = useState<MasterFinancialPlanData | null>(null);
@@ -48,10 +41,6 @@ export default function PlanningPage() {
             summaryPlanData={summaryPlanData}
             feasibilityData={feasibilityData}
             investmentData={investmentData}
-            onItineraryUpdate={setItineraryData}
-            onBudgetUpdate={setBudgetData}
-            onWeatherUpdate={setWeatherData}
-            onRestaurantUpdate={setRestaurantData}
             onProductUpdate={setProductData}
             onFinancialPlanUpdate={setFinancialPlanData}
             onMasterPlanUpdate={setMasterPlanData}
@@ -71,7 +60,7 @@ export default function PlanningPage() {
           </div>
 
           {/* Empty State */}
-          {!masterPlanData && !financialPlanData && !itineraryData && !budgetData && !weatherData && !productData && !summaryPlanData && !feasibilityData && !investmentData && (
+          {!masterPlanData && !financialPlanData && !productData && !summaryPlanData && !feasibilityData && !investmentData && (
             <div className="flex items-center justify-center h-[400px] bg-muted/20 rounded-xl border-2 border-dashed border-border shadow-sm">
               <div className="text-center">
                 <div className="text-6xl mb-4">📊</div>
@@ -128,27 +117,6 @@ export default function PlanningPage() {
           {masterPlanData && (
             <div className="mb-4">
               <MasterPlanCard data={masterPlanData} />
-            </div>
-          )}
-
-          {itineraryData && (
-            <div className="mb-4">
-              <ItineraryCard data={itineraryData} restaurantData={restaurantData} />
-            </div>
-          )}
-
-          {(weatherData || budgetData) && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {weatherData && (
-                <div>
-                  <WeatherCard data={weatherData} />
-                </div>
-              )}
-              {budgetData && (
-                <div>
-                  <BudgetBreakdown data={budgetData} />
-                </div>
-              )}
             </div>
           )}
 

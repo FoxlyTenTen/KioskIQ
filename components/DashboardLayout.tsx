@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import {
   LayoutDashboard,
   Users,
@@ -17,6 +18,8 @@ import {
   X,
   LogOut,
   Calculator,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -35,8 +38,14 @@ const menuItems = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     // TODO: Add actual logout logic
@@ -51,8 +60,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         } transition-all duration-300 border-r border-border bg-card flex flex-col overflow-hidden`}
       >
         <div className="p-6 border-b border-border">
-          <h1 className="font-semibold text-foreground">KioskIQ Intelligence</h1>
-          <p className="text-sm text-muted-foreground mt-1">AI-Powered Business Planning</p>
+          <h1 className="font-semibold text-foreground text-lg truncate">KioskIQ</h1>
+          <p className="text-xs text-muted-foreground mt-1 truncate">AI-Powered Planning</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -100,7 +109,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -109,16 +118,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             >
               {!sidebarOpen ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
             </Button>
-            <div className="relative w-96">
+            <div className="relative w-64 md:w-96 hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search insights, reports, settings..."
-                className="pl-9"
+                placeholder="Search insights..."
+                className="pl-9 h-9"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle theme"
+            >
+              {mounted && (theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
+              {!mounted && <Sun className="h-5 w-5" />}
+            </Button>
+            
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full" />
@@ -129,7 +148,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
           {children}
         </main>
       </div>
