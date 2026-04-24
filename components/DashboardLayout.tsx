@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Package,
   MapPin,
-  Brain,
   Settings,
   Search,
   Bell,
@@ -24,6 +23,10 @@ import {
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Input } from './ui/input';
+import dynamic from 'next/dynamic';
+import { FinancialDataProvider, useFinancialData } from './FinancialDataContext';
+
+const TravelChat = dynamic(() => import('@/components/travel-chat'), { ssr: false });
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard Overview', path: '/' },
@@ -32,32 +35,44 @@ const menuItems = [
   { icon: TrendingUp, label: 'Demand Forecasting', path: '/demand' },
   { icon: Package, label: 'Inventory & Waste', path: '/inventory' },
   { icon: MapPin, label: 'Location & Strategy', path: '/location' },
-  { icon: Brain, label: 'AI Insights', path: '/ai-insights' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function LayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
+  const {
+    financialPlanData,
+    summaryPlanData,
+    feasibilityData,
+    investmentData,
+    setProductData,
+    setFinancialPlanData,
+    setMasterPlanData,
+    setSummaryPlanData,
+    setFeasibilityData,
+    setInvestmentData,
+  } = useFinancialData();
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleLogout = () => {
-    // TODO: Add actual logout logic
     router.push('/login');
   };
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Left Sidebar */}
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-0'
-        } transition-all duration-300 border-r border-border bg-card flex flex-col overflow-hidden`}
+        } transition-all duration-300 border-r border-border bg-card flex flex-col overflow-hidden shrink-0`}
       >
         <div className="p-6 border-b border-border">
           <h1 className="font-semibold text-foreground text-lg truncate">KioskIQ</h1>
@@ -108,7 +123,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Center: header + main content */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
             <Button
@@ -137,7 +153,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {mounted && (theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
               {!mounted && <Sun className="h-5 w-5" />}
             </Button>
-            
+
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full" />
@@ -152,6 +168,38 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Right: Persistent Chat Panel */}
+      <div className="w-[400px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+        <div className="p-4 border-b border-border bg-muted/30 shrink-0">
+          <h2 className="text-base font-semibold">Planning Assistant</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            <span className="text-primary font-medium">Orchestrator</span> + <span className="text-primary/70 font-medium">Specialists</span>
+          </p>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <TravelChat
+            financialPlanData={financialPlanData}
+            summaryPlanData={summaryPlanData}
+            feasibilityData={feasibilityData}
+            investmentData={investmentData}
+            onProductUpdate={setProductData}
+            onFinancialPlanUpdate={setFinancialPlanData}
+            onMasterPlanUpdate={setMasterPlanData}
+            onSummaryPlanUpdate={setSummaryPlanData}
+            onFeasibilityUpdate={setFeasibilityData}
+            onInvestmentUpdate={setInvestmentData}
+          />
+        </div>
+      </div>
     </div>
+  );
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <FinancialDataProvider>
+      <LayoutInner>{children}</LayoutInner>
+    </FinancialDataProvider>
   );
 }

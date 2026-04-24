@@ -1,1 +1,5 @@
-export default function AIInsightsPage() { return <div><h1>AI Insights Page</h1><p>This is a placeholder for the AI insights feature.</p></div>; }
+import { redirect } from "next/navigation";
+
+export default function AIInsightsPage() {
+  redirect("/");
+}

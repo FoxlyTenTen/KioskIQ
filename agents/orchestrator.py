@@ -22,15 +22,26 @@ import uvicorn
 from fastapi import FastAPI
 from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
 from google.adk.agents import LlmAgent
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.apps import App
 from google.adk.plugins import ReflectAndRetryToolPlugin
 os.environ["GOOGLE_ADK_PROGRESSIVE_SSE_STREAMING"] = "0"
+
+ilmu_api_key = os.getenv("ILMU_API_KEY")
+ilmu_model = "ilmu-glm-5.1"
+
+if not ilmu_api_key:
+    raise ValueError("Missing ILMU_API_KEY in .env file")
+
+# ILMU uses OpenAI-compatible API format
+os.environ["OPENAI_API_KEY"] = ilmu_api_key
+os.environ["OPENAI_BASE_URL"] = "https://api.ilmu.ai/v1"
 
 current_date = datetime.now().strftime("%Y-%m-%d") 
 
 orchestrator_agent = LlmAgent(
     name="OrchestratorAgent",
-    model="gemini-2.5-pro",
+    model=LiteLlm(model=f"openai/{ilmu_model}"),
     tools=[],
     instruction=f"""
     You are a Financial Planning Orchestrator. Your role is to help users manage their finances, track expenses, and create personalized financial plans.
@@ -140,10 +151,9 @@ app = FastAPI(title="Travel Planning Orchestrator (ADK)")
 add_adk_fastapi_endpoint(app, adk_orchestrator_agent, path="/")
 
 if __name__ == "__main__":
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("Warning: GOOGLE_API_KEY environment variable not set!")
-        print("Set it with: export GOOGLE_API_KEY='your-key-here'")
-        print("Get a key from: https://aistudio.google.com/app/apikey")
+    if not os.getenv("ILMU_API_KEY"):
+        print("Warning: ILMU_API_KEY environment variable not set!")
+        print("Set it in your .env file: ILMU_API_KEY='your-key-here'")
         print()
 
     port = int(os.getenv("ORCHESTRATOR_PORT", 9000))
