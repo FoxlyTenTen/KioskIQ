@@ -1,13 +1,7 @@
 /**
- * CopilotKit API Route with A2A Middleware
+ * CopilotKit API Route (Simplified Fast Version)
  *
- * Sets up the connection between:
- * - Frontend (CopilotKit) → A2A Middleware → Orchestrator → A2A Agents
- *
- * KEY CONCEPTS:
- * - AG-UI Protocol: Agent-UI communication (CopilotKit ↔ Orchestrator)
- * - A2A Protocol: Agent-to-agent communication (Orchestrator ↔ Specialized Agents)
- * - A2A Middleware: Injects send_message_to_a2a_agent tool to bridge AG-UI and A2A
+ * Direct connection to Master Agents (No Middleware)
  */
 
 import {
@@ -16,92 +10,32 @@ import {
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
 import { HttpAgent } from "@ag-ui/client";
-import { A2AMiddlewareAgent } from "@ag-ui/a2a-middleware";
 import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-  // STEP 1: Define A2A agent URLs
-  // STEP 1: Define A2A agent URLs
-  const productAgentUrl = process.env.PRODUCT_AGENT_URL || "http://localhost:9006";
-  const coachAgentUrl = process.env.COACH_AGENT_URL || "http://localhost:9007";
-  const databaseAgentUrl = process.env.DATABASE_AGENT_URL || "http://localhost:9008";
-  const plannerAgentUrl = process.env.PLANNER_AGENT_URL || "http://localhost:9009";
-  const summaryAgentUrl = process.env.SUMMARY_AGENT_URL || "http://localhost:9010";
-  const feasibilityAgentUrl = process.env.FEASIBILITY_AGENT_URL || "http://localhost:9011";
-  const investmentAgentUrl = process.env.INVESTMENT_AGENT_URL || "http://localhost:9012";
-
-  // STEP 2: Define orchestrator URL (speaks AG-UI Protocol)
+  // Agent URLs
   const orchestratorUrl = process.env.ORCHESTRATOR_URL || "http://localhost:9000";
+  const locationMasterUrl = process.env.LOCATION_ORCHESTRATOR_URL || "http://localhost:9100";
 
-  // STEP 3: Wrap orchestrator with HttpAgent (AG-UI client)
-  const orchestrationAgent = new HttpAgent({
+  // Financial Master Agent
+  const a2aChatAgent = new HttpAgent({
     url: orchestratorUrl,
   });
 
-  // STEP 4: Create A2A Middleware Agent
-  const a2aMiddlewareAgent = new A2AMiddlewareAgent({
-    description:
-      "Financial planning assistant with specialized agents.",
-
-    agentUrls: [
-      productAgentUrl,
-      coachAgentUrl,
-      databaseAgentUrl,
-      plannerAgentUrl,
-      summaryAgentUrl,
-      feasibilityAgentUrl,
-      investmentAgentUrl,
-    ],
-
-    orchestrationAgent,
-
-    // Workflow instructions (middleware auto-adds routing info)
-    instructions: `
-      You are a Financial Planning Assistant that orchestrates specialized agents.
-
-      AVAILABLE AGENTS:
-      - Coach Agent (ADK): Analyzes spending, provides conversational advice, AND creates structured financial plans.
-      - Database Agent (ADK): Handles database operations.
-      - Prod Research Agent (ADK): Finds best deals.
-      - Summary Agent (ADK): Displays a real-time dashboard summary of user input.
-      - Feasibility Agent (ADK): Deterministically checks plan feasibility (math-based).
-      - Investment Agent (ADK): Recommends investment strategies based on profile.
-      
-      WORKFLOW STRATEGY (SEQUENTIAL):
-
-      1. **Financial Planning Master Flow**:
-         - Trigger: User wants a "financial plan" or "savings plan".
-         - Step 1: Call 'gather_financial_planning_details' (form).
-         - Step 2: Call Summary Agent -> Display Dashboard (MANDATORY immediate confirmation).
-         - Step 3: Call Feasibility Agent -> Check Math (Are inputs realistic?).
-         - Step 4: Call Investment Agent -> Get Strategy (Allocation & Vehicles).
-         - Step 5 (Optional): If goal is a product, Call Product Agent.
-         - Step 6: Call Financial Planner Agent -> Synthesize Master Plan.
-
-      2. **Transaction Management**:
-         - Trigger: "I spent $50", "List my expenses".
-         - Add: Call 'gather_transaction_details' -> Database Agent ('add_transaction').
-         - View: Call Database Agent ('get_user_transactions') -> Show results.
-
-      3. **Ad-Hoc Product Shopping / Quick Advice**:
-         - Trigger: queries like "Can I afford x?", "Check price of y", "Is buying z good?".
-         - ACTION: Call Product Research Agent (for price) OR Financial Coach Agent (in MODE 1: Chatbot).
-         - DO NOT trigger the 'Financial Planning Master Flow' (Step 1 form) for simple questions.
-
-      CRITICAL RULES:
-      - Call agents ONE AT A TIME.
-      - Wait for results.
-    `,
+  // Location Master Agent
+  const locationExpertAgent = new HttpAgent({
+    url: locationMasterUrl,
   });
 
-  // STEP 5: Create CopilotKit Runtime
+  // Create CopilotKit Runtime
   const runtime = new CopilotRuntime({
     agents: {
-      a2a_chat: a2aMiddlewareAgent, // Must match frontend: <CopilotKit agent="a2a_chat">
+      a2a_chat: a2aChatAgent, 
+      location_expert: locationExpertAgent,
     },
   });
 
-  // STEP 6: Set up Next.js endpoint handler
+  // Set up Next.js endpoint handler
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
     serviceAdapter: new ExperimentalEmptyAdapter(),
