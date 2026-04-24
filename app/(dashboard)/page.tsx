@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, TrendingUp, AlertTriangle, Wallet, BarChart3 } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { AIInsightPanel } from '@/components/AIInsightPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -30,27 +28,106 @@ const ordersData = [
   { date: 'Apr 23', actual: null, predicted: 245 },
 ];
 
-const staffingData = [
-  { time: '8-10am', current: 3, recommended: 4 },
-  { time: '10-12pm', current: 4, recommended: 5 },
-  { time: '12-2pm', current: 6, recommended: 8 },
-  { time: '2-4pm', current: 5, recommended: 5 },
-  { time: '4-6pm', current: 4, recommended: 6 },
-  { time: '6-8pm', current: 5, recommended: 7 },
-];
-
 const lowStockItems = [
-  { item: 'Fresh Tomatoes', current: 15, threshold: 50, status: 'critical' },
-  { item: 'Mozzarella Cheese', current: 8, threshold: 20, status: 'critical' },
-  { item: 'Lettuce', current: 25, threshold: 40, status: 'warning' },
-  { item: 'Chicken Breast', current: 30, threshold: 50, status: 'warning' },
+  {
+    item: 'Fresh Tomatoes',
+    current: 15,
+    threshold: 50,
+    status: 'critical',
+    image:
+      'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Mozzarella Cheese',
+    current: 8,
+    threshold: 20,
+    status: 'critical',
+    image:
+      'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Lettuce',
+    current: 25,
+    threshold: 40,
+    status: 'warning',
+    image:
+      'https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Chicken Breast',
+    current: 30,
+    threshold: 50,
+    status: 'warning',
+    image:
+      'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=120&h=120&q=80',
+  },
 ];
 
 const expiryItems = [
-  { item: 'Milk (2L)', expiry: '2 days', quantity: 12 },
-  { item: 'Ground Beef', expiry: '3 days', quantity: 8 },
-  { item: 'Fresh Basil', expiry: '1 day', quantity: 5 },
+  {
+    item: 'Milk (2L)',
+    expiry: '2 days',
+    quantity: 12,
+    image:
+      'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Ground Beef',
+    expiry: '3 days',
+    quantity: 8,
+    image:
+      'https://picsum.photos/seed/ground-beef/120/120',
+  },
+  {
+    item: 'Fresh Basil',
+    expiry: '1 day',
+    quantity: 5,
+    image:
+      'https://images.unsplash.com/photo-1618375569909-3c8616cf7733?auto=format&fit=crop&w=120&h=120&q=80',
+  },
 ];
+
+const topSellingItems = [
+  {
+    item: 'Chicken Rice Bowl',
+    sold: 86,
+    revenue: 1032,
+    image:
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Iced Latte',
+    sold: 74,
+    revenue: 888,
+    image:
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Nasi Lemak Set',
+    sold: 69,
+    revenue: 1035,
+    image:
+      'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Classic Burger',
+    sold: 57,
+    revenue: 969,
+    image:
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+  {
+    item: 'Caesar Salad',
+    sold: 41,
+    revenue: 615,
+    image:
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=120&h=120&q=80',
+  },
+];
+
+const todaysRevenue = 4539;
+const todaysOrders = 215;
+const averageOrderValue = todaysRevenue / todaysOrders;
 
 export default function DashboardOverview() {
   return (
@@ -62,24 +139,30 @@ export default function DashboardOverview() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         <KPICard
           title="Today's Orders"
-          value={215}
+          value={todaysOrders}
           icon={ShoppingCart}
           trend={{ value: '+8.5% from yesterday', positive: true }}
+        />
+        <KPICard
+          title="Today's Revenue"
+          value={`RM ${todaysRevenue.toLocaleString()}`}
+          icon={Wallet}
+          trend={{ value: '+12.2% from yesterday', positive: true }}
+        />
+        <KPICard
+          title="Average Order Value"
+          value={`RM ${averageOrderValue.toFixed(2)}`}
+          icon={BarChart3}
+          description="Revenue per completed order"
         />
         <KPICard
           title="Predicted Tomorrow"
           value={230}
           icon={TrendingUp}
           description="Expected orders for Apr 22"
-        />
-        <KPICard
-          title="Staff Required"
-          value="8 people"
-          icon={Users}
-          description="Next peak: 12-2pm"
         />
         <KPICard
           title="Low Stock Alerts"
@@ -150,81 +233,95 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Current vs Recommended Staffing</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Top-Selling Items (Today)</span>
+              <Badge variant="secondary">Top 5</Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={staffingData}>
-                <CartesianGrid key="grid-staffing" strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  key="xaxis-staffing"
-                  dataKey="time"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis key="yaxis-staffing" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <Tooltip
-                  key="tooltip-staffing"
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend key="legend-staffing" />
-                <Bar key="current-staff" dataKey="current" fill="#85E0CE" name="Current Staff" />
-                <Bar key="recommended-staff" dataKey="recommended" fill="#FFAC4D" name="AI Recommended" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-3">
+              {topSellingItems.map((item, idx) => (
+                <div key={item.item} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline">#{idx + 1}</Badge>
+                    <img
+                      src={item.image}
+                      alt={item.item}
+                      className="h-10 w-10 rounded-md object-cover border"
+                      loading="lazy"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">{item.item}</p>
+                      <p className="text-xs text-muted-foreground">{item.sold} sold</p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold">RM {item.revenue.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Low Stock Alerts</span>
-                <Badge variant="destructive">{lowStockItems.length}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {lowStockItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Low Stock Alerts</span>
+              <Badge variant="destructive">{lowStockItems.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {lowStockItems.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.image}
+                      alt={item.item}
+                      className="h-10 w-10 rounded-md object-cover border"
+                      loading="lazy"
+                    />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.item}</p>
                       <p className="text-xs text-muted-foreground">
                         {item.current} / {item.threshold} units
                       </p>
                     </div>
-                    <Badge variant={item.status === 'critical' ? 'destructive' : 'secondary'}>
-                      {item.status}
-                    </Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <Badge variant={item.status === 'critical' ? 'destructive' : 'secondary'}>
+                    {item.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Items Near Expiry</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {expiryItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+        <Card>
+          <CardHeader>
+            <CardTitle>Items Near Expiry</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {expiryItems.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.image}
+                      alt={item.item}
+                      className="h-10 w-10 rounded-md object-cover border"
+                      loading="lazy"
+                    />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.item}</p>
                       <p className="text-xs text-muted-foreground">{item.quantity} units</p>
                     </div>
-                    <Badge variant="outline">{item.expiry}</Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  <Badge variant="outline">{item.expiry}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
