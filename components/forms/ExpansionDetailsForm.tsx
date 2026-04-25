@@ -1,11 +1,18 @@
 /**
  * ExpansionDetailsForm Component
  *
- * HITL form that collects business location expansion details
- * before the Site Selection Agent runs.
+ * HITL form — user searches a location via Google Maps Places Autocomplete.
+ * Passes exact lat/lng to the site selection agent so no server-side geocoding needed.
  */
 
-import React, { useState, useEffect } from "react";
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import { Autocomplete, GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+
+const LIBRARIES: ("places")[] = ["places"];
+const MAP_CONTAINER = { width: "100%", height: "180px" };
+const DEFAULT_CENTER = { lat: 3.1478, lng: 101.6953 }; // KL
 
 interface ExpansionDetailsFormProps {
   args: any;
@@ -18,42 +25,52 @@ export const ExpansionDetailsForm: React.FC<ExpansionDetailsFormProps> = ({ args
     try { parsedArgs = JSON.parse(args); } catch { parsedArgs = {}; }
   }
 
-  const [targetArea, setTargetArea] = useState("");
-  const [budgetRange, setBudgetRange] = useState("moderate");
-  const [businessType, setBusinessType] = useState("F&B Kiosk");
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    libraries: LIBRARIES,
+  });
+
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const [targetArea, setTargetArea] = useState(parsedArgs?.targetArea ?? "");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
+  const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [budgetRange, setBudgetRange] = useState(parsedArgs?.budgetRange ?? "moderate");
+  const [businessType, setBusinessType] = useState(parsedArgs?.businessType ?? "F&B Kiosk");
   const [submitted, setSubmitted] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (parsedArgs?.targetArea) setTargetArea(parsedArgs.targetArea);
-    if (parsedArgs?.budgetRange) setBudgetRange(parsedArgs.budgetRange);
-    if (parsedArgs?.businessType) setBusinessType(parsedArgs.businessType);
-  }, []);
-
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!targetArea.trim()) errs.targetArea = "Please enter a target area or city";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
+  const onPlaceChanged = () => {
+    const place = autocompleteRef.current?.getPlace();
+    if (!place?.geometry?.location) return;
+    const placeLat = place.geometry.location.lat();
+    const placeLng = place.geometry.location.lng();
+    setLat(placeLat);
+    setLng(placeLng);
+    setTargetArea(place.formatted_address ?? place.name ?? "");
+    setMapCenter({ lat: placeLat, lng: placeLng });
+    setMarkerPos({ lat: placeLat, lng: placeLng });
+    setError("");
   };
 
   const handleSubmit = () => {
-    if (!validate()) return;
+    if (!targetArea.trim()) { setError("Please search and select a location"); return; }
+    if (!lat || !lng) { setError("Please select a location from the dropdown to get coordinates"); return; }
     setSubmitted(true);
-    respond?.({ targetArea, budgetRange, businessType });
+    respond?.({ targetArea, lat, lng, budgetRange, businessType });
   };
 
   if (submitted) {
     return (
       <div className="bg-green-50/95 border border-green-200 rounded-xl p-4 my-3 shadow-sm animate-in fade-in slide-in-from-bottom-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg border border-green-200">
-            ✓
-          </div>
+          <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-lg border border-green-200">✓</div>
           <div>
-            <p className="text-sm font-bold text-gray-900">Expansion Details Submitted</p>
+            <p className="text-sm font-bold text-gray-900">Location Confirmed</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              Searching for <span className="font-semibold text-indigo-600">{targetArea}</span> — {budgetRange} budget
+              Searching near <span className="font-semibold text-indigo-600">{targetArea}</span> — {budgetRange} budget
             </p>
           </div>
         </div>
@@ -77,32 +94,60 @@ export const ExpansionDetailsForm: React.FC<ExpansionDetailsFormProps> = ({ args
         <div>
           <h3 className="text-sm font-bold text-gray-900">Business Location Expansion</h3>
           <p className="text-[11px] text-indigo-700/80 font-medium uppercase tracking-wide">
-            Tell us where you want to expand
+            Search your target area on the map
           </p>
         </div>
       </div>
 
       <div className="space-y-4">
-        {/* Target Area */}
+        {/* Google Places Search */}
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">
-            Target Area / City *
+            Search Target Location *
           </label>
-          <input
-            type="text"
-            value={targetArea}
-            onChange={(e) => setTargetArea(e.target.value)}
-            className={`w-full px-3 py-2.5 text-sm rounded-lg border transition-all duration-200 shadow-sm ${
-              errors.targetArea
-                ? "border-red-300 bg-red-50"
-                : "border-indigo-100 bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100/50 focus:outline-none"
-            }`}
-            placeholder="e.g., Bangsar South, KL or Johor Bahru"
-          />
-          {errors.targetArea && (
-            <p className="text-xs text-red-500 mt-1 font-medium">{errors.targetArea}</p>
+          {isLoaded ? (
+            <Autocomplete
+              onLoad={(ref) => { autocompleteRef.current = ref; }}
+              onPlaceChanged={onPlaceChanged}
+              options={{ componentRestrictions: { country: "my" }, types: ["establishment", "geocode"] }}
+            >
+              <input
+                type="text"
+                defaultValue={targetArea}
+                className={`w-full px-3 py-2.5 text-sm rounded-lg border transition-all duration-200 shadow-sm ${
+                  error
+                    ? "border-red-300 bg-red-50"
+                    : "border-indigo-100 bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100/50 focus:outline-none"
+                }`}
+                placeholder="Search mall, area, or address in Malaysia..."
+              />
+            </Autocomplete>
+          ) : (
+            <div className="w-full px-3 py-2.5 text-sm rounded-lg border border-indigo-100 bg-white/50 text-gray-400">
+              Loading Maps...
+            </div>
+          )}
+          {error && <p className="text-xs text-red-500 mt-1 font-medium">{error}</p>}
+          {lat && lng && (
+            <p className="text-[10px] text-emerald-600 mt-1 font-medium">
+              ✓ Coordinates locked: {lat.toFixed(5)}, {lng.toFixed(5)}
+            </p>
           )}
         </div>
+
+        {/* Mini Map Preview */}
+        {isLoaded && (
+          <div className="rounded-xl overflow-hidden border border-indigo-100 shadow-sm">
+            <GoogleMap
+              mapContainerStyle={MAP_CONTAINER}
+              center={mapCenter}
+              zoom={markerPos ? 15 : 11}
+              options={{ disableDefaultUI: true, zoomControl: true, gestureHandling: "cooperative" }}
+            >
+              {markerPos && <Marker position={markerPos} />}
+            </GoogleMap>
+          </div>
+        )}
 
         {/* Business Type */}
         <div>

@@ -1,18 +1,12 @@
 """
 Fast Orchestrator Agent (ADK + AG-UI Protocol)
 Using ILMU GLM-5.1 through Anthropic-compatible endpoint.
-
-This version is optimized for speed:
-- shorter system prompt
-- streaming enabled
-- lower retry count
-- Anthropic-compatible ILMU endpoint
-- less token bloat
 """
 
 from __future__ import annotations
 
 import os
+import sys
 from datetime import datetime
 
 import uvicorn
@@ -25,11 +19,34 @@ from google.adk.apps import App
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
+from google.adk.tools.mcp_tool import mcp_session_manager as _msm
 
 
 load_dotenv()
 
-# Makes the UI feel faster because output can stream progressively
+# ── Patch MCP cleanup to catch BaseException (anyio cancel scope raises
+#    BaseException, not Exception, so it bypasses ADK's except-Exception blocks
+#    and crashes the ASGI handler).
+_orig_session_close = _msm.MCPSessionManager.close
+
+async def _safe_session_close(self):
+    async with self._session_lock:
+        for session_key in list(self._sessions.keys()):
+            _, exit_stack = self._sessions[session_key]
+            try:
+                await exit_stack.aclose()
+            except BaseException as e:
+                print(
+                    f"Warning: Error during MCP session cleanup for {session_key}: {e}",
+                    file=self._errlog,
+                )
+            finally:
+                del self._sessions[session_key]
+
+_msm.MCPSessionManager.close = _safe_session_close
+# ── End patch ──────────────────────────────────────────────────────────────────
+
+
 os.environ["GOOGLE_ADK_PROGRESSIVE_SSE_STREAMING"] = "1"
 
 ILMU_API_KEY = os.getenv("ILMU_API_KEY")
@@ -38,7 +55,6 @@ ILMU_MODEL = os.getenv("ILMU_MODEL", "ilmu-glm-5.1")
 if not ILMU_API_KEY:
     raise ValueError("Missing ILMU_API_KEY in .env file")
 
-# ILMU Anthropic-compatible endpoint
 os.environ["ANTHROPIC_API_KEY"] = ILMU_API_KEY
 os.environ["ANTHROPIC_BASE_URL"] = os.getenv(
     "ANTHROPIC_BASE_URL",
@@ -46,7 +62,6 @@ os.environ["ANTHROPIC_BASE_URL"] = os.getenv(
 )
 
 current_date = datetime.now().strftime("%Y-%m-%d")
-
 
 ORCHESTRATOR_INSTRUCTION = f"""
 You are KioskIQ's Operations Orchestrator for F&B kiosk owners in Malaysian malls.
@@ -134,7 +149,7 @@ Keywords: "expand", "new location", "open another outlet", "site selection",
 Workflow:
 1. gather_expansion_details  ← show the expansion form first, wait for submission
 2. After form is submitted, call Site Selection Expert Agent with the submitted data
-   (include targetArea, budgetRange, businessType in the message to the agent)
+   (include targetArea, lat, lng, budgetRange, businessType in the message to the agent)
 3. The agent returns 3 location options — call display_site_selection_options to show them
 4. Wait for user to select a location (HITL respond)
 5. Confirm the selection and ask if they want to proceed to financial analysis
@@ -154,17 +169,11 @@ STEP 3 — RESPONSE RULES
 - Keep answers short and action-oriented
 """
 
-
 RAG_MCP_URL = os.getenv("RAG_MCP_URL", "http://localhost:9013/sse")
 SQL_MCP_URL = os.getenv("SQL_MCP_URL", "http://localhost:9014/sse")
 
-rag_toolset = McpToolset(
-    connection_params=SseConnectionParams(url=RAG_MCP_URL)
-)
-
-sql_toolset = McpToolset(
-    connection_params=SseConnectionParams(url=SQL_MCP_URL)
-)
+rag_toolset = McpToolset(connection_params=SseConnectionParams(url=RAG_MCP_URL))
+sql_toolset = McpToolset(connection_params=SseConnectionParams(url=SQL_MCP_URL))
 
 orchestrator_agent = LlmAgent(
     name="OrchestratorAgent",
@@ -177,7 +186,6 @@ orchestrator_app = App(
     name="orchestrator_app",
     root_agent=orchestrator_agent,
     plugins=[
-        # Faster than 3 retries. Use plugins=[] if you want maximum speed.
         ReflectAndRetryToolPlugin(max_retries=1),
     ],
 )
@@ -205,4 +213,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         log_level="warning",
+        timeout_keep_alive=120,
     )

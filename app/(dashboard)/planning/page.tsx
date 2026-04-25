@@ -7,6 +7,8 @@ import { MasterPlanCard } from "@/components/MasterPlanCard";
 import { SummaryPlanCard } from "@/components/SummaryPlanCard";
 import { FeasibilityCard } from "@/components/FeasibilityCard";
 import { InvestmentCard } from "@/components/InvestmentCard";
+import { SelectedSiteCard } from "@/components/SelectedSiteCard";
+import { SiteMapCard } from "@/components/SiteMapCard";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 
 export default function PlanningPage() {
@@ -17,6 +19,7 @@ export default function PlanningPage() {
     summaryPlanData,
     feasibilityData,
     investmentData,
+    selectedSiteOption,
     setFinancialPlanData,
     setSummaryPlanData,
     setFeasibilityData,
@@ -29,7 +32,8 @@ export default function PlanningPage() {
     !productData &&
     !summaryPlanData &&
     !feasibilityData &&
-    !investmentData;
+    !investmentData &&
+    !selectedSiteOption;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -49,6 +53,13 @@ export default function PlanningPage() {
               Use the assistant on the right to create financial plans, investment strategies, and feasibility analysis.
             </p>
           </div>
+        </div>
+      )}
+
+      {selectedSiteOption && (
+        <div className="mb-4">
+          <SelectedSiteCard data={selectedSiteOption} />
+          <SiteMapCard data={selectedSiteOption} />
         </div>
       )}
 

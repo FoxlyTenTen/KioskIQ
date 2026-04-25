@@ -8,6 +8,7 @@ import type {
   SummaryPlanData,
   FeasibilityData,
   InvestmentStrategyData,
+  SiteSelectionOption,
 } from "./types";
 
 interface FinancialDataState {
@@ -17,12 +18,14 @@ interface FinancialDataState {
   summaryPlanData: SummaryPlanData | null;
   feasibilityData: FeasibilityData | null;
   investmentData: InvestmentStrategyData | null;
+  selectedSiteOption: SiteSelectionOption | null;
   setProductData: (d: ProductResearchData | null) => void;
   setFinancialPlanData: (d: FinancialPlanData | null) => void;
   setMasterPlanData: (d: MasterFinancialPlanData | null) => void;
   setSummaryPlanData: (d: SummaryPlanData | null) => void;
   setFeasibilityData: (d: FeasibilityData | null) => void;
   setInvestmentData: (d: InvestmentStrategyData | null) => void;
+  setSelectedSiteOption: (d: SiteSelectionOption | null) => void;
 }
 
 const FinancialDataContext = createContext<FinancialDataState | null>(null);
@@ -34,6 +37,7 @@ export function FinancialDataProvider({ children }: { children: React.ReactNode 
   const [summaryPlanData, setSummaryPlanData] = useState<SummaryPlanData | null>(null);
   const [feasibilityData, setFeasibilityData] = useState<FeasibilityData | null>(null);
   const [investmentData, setInvestmentData] = useState<InvestmentStrategyData | null>(null);
+  const [selectedSiteOption, setSelectedSiteOption] = useState<SiteSelectionOption | null>(null);
 
   return (
     <FinancialDataContext.Provider
@@ -44,12 +48,14 @@ export function FinancialDataProvider({ children }: { children: React.ReactNode 
         summaryPlanData,
         feasibilityData,
         investmentData,
+        selectedSiteOption,
         setProductData,
         setFinancialPlanData,
         setMasterPlanData,
         setSummaryPlanData,
         setFeasibilityData,
         setInvestmentData,
+        setSelectedSiteOption,
       }}
     >
       {children}

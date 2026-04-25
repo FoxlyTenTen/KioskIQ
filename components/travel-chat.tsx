@@ -52,6 +52,7 @@ const ChatInner = (props: TravelChatProps) => {
     onSummaryPlanUpdate,
     onFeasibilityUpdate,
     onInvestmentUpdate,
+    onSelectedSiteUpdate,
   } = props;
   // Shared State Management for Financial Planning
   const { state: financialState, setState: setFinancialState } = useCoAgent<{
@@ -405,7 +406,16 @@ const ChatInner = (props: TravelChatProps) => {
     renderAndWaitForResponse: ({ args, respond }) => {
       const data = args as unknown as SiteSelectionData;
       if (!data?.options?.length) return <></>;
-      return <SiteSelectionCard data={data} respond={respond} />;
+      const wrappedRespond = respond
+        ? (selection: object) => {
+            const opt = data.options.find(
+              (o) => o.optionId === (selection as any).selectedOptionId
+            );
+            if (opt) onSelectedSiteUpdate?.(opt);
+            respond(selection);
+          }
+        : undefined;
+      return <SiteSelectionCard data={data} respond={wrappedRespond} />;
     },
   });
 

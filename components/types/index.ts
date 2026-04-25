@@ -170,11 +170,18 @@ export interface FeasibilityData {
 }
 
 // Site Selection Data
+export interface SiteCompetitor {
+  name: string;
+  coordinates: { lat: number; lng: number };
+}
+
 export interface SiteSelectionOption {
   optionId: string;
   name: string;
   type: string;
   summary: string;
+  coordinates?: { lat: number; lng: number };
+  competitors?: SiteCompetitor[];
   metrics: {
     footTrafficDaily: number;
     rentMonthlyRM: number;
@@ -231,6 +238,7 @@ export interface TravelChatProps {
   onSummaryPlanUpdate?: (data: SummaryPlanData | null) => void;
   onFeasibilityUpdate?: (data: FeasibilityData | null) => void;
   onInvestmentUpdate?: (data: InvestmentStrategyData | null) => void;
+  onSelectedSiteUpdate?: (data: SiteSelectionOption) => void;
 }
 
 export interface AgentStyle {
