@@ -177,7 +177,7 @@ export default function PlanningPage() {
       {/* Header */}
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Planning Results</h2>
+          <h2 className="text-2xl font-bold mb-1">Business Intelligence Canvas</h2>
           <p className="text-sm text-muted-foreground">
             {isEmpty
               ? "Waiting for agent responses…"
@@ -199,10 +199,10 @@ export default function PlanningPage() {
       {isEmpty ? (
         <div className="flex-1 flex items-center justify-center bg-muted/20 rounded-xl border-2 border-dashed border-border">
           <div className="text-center">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold mb-2">Start Your Planning Journey</h3>
+            <div className="text-6xl mb-4">🏬</div>
+            <h3 className="text-xl font-semibold mb-2">Find Your Next Winning Location</h3>
             <p className="text-muted-foreground max-w-md text-sm">
-              Use the assistant on the right to create financial plans, investment strategies, and feasibility analysis.
+              Tell the AI your expansion goals — it will scout locations, assess feasibility, research the market, and build your retail growth roadmap.
             </p>
           </div>
         </div>

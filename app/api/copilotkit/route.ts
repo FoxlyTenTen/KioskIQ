@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
   const summaryAgentUrl = process.env.SUMMARY_AGENT_URL || "http://localhost:9010";
   const feasibilityAgentUrl = process.env.FEASIBILITY_AGENT_URL || "http://localhost:9011";
   const investmentAgentUrl = process.env.INVESTMENT_AGENT_URL || "http://localhost:9012";
+  const forecastAgentUrl = process.env.FORECAST_AGENT_URL || "http://localhost:9025";
   const siteSelectionAgentUrl = process.env.SITE_SELECTION_AGENT_URL || "http://localhost:9020";
   const expansionFeasibilityAgentUrl = process.env.EXPANSION_FEASIBILITY_AGENT_URL || "http://localhost:9021";
   const marketResearcherAgentUrl = process.env.MARKET_RESEARCHER_AGENT_URL || "http://localhost:9022";
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       summaryAgentUrl,
       feasibilityAgentUrl,
       investmentAgentUrl,
+      forecastAgentUrl,
       siteSelectionAgentUrl,
       expansionFeasibilityAgentUrl,
       marketResearcherAgentUrl,
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
       You are a Financial Planning Assistant that orchestrates specialized agents.
 
       AVAILABLE AGENTS:
+      - Forecast Agent (ADK): ML-powered demand forecasting using live Supabase data. Predicts daily orders, revenue, AOV, stockout risk, expiry waste, reorder quantities, and top sellers for outlet-1/outlet-2/outlet-3. Use for any forecast or prediction request.
       - Coach Agent (ADK): Analyzes spending, provides conversational advice, AND creates structured financial plans.
       - Database Agent (ADK): Handles database operations.
       - Prod Research Agent (ADK): Finds best deals.

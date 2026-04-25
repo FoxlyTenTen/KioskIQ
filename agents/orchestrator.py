@@ -82,6 +82,11 @@ C) KIOSK OVERVIEW — general questions: "how is the business?", "any insights?"
 
 D) OTHER — greetings, unclear questions.
 
+F) FORECAST / DEMAND PREDICTION — anything about predicting future demand, forecasting
+   orders, revenue forecasts, stockout predictions, reorder recommendations, expiry risk,
+   top selling predictions. Keywords: "forecast", "predict", "tomorrow", "demand",
+   "will sell", "stock out", "reorder", "waste risk", "expiry risk", "top seller next week".
+
 ============================================================
 STEP 2 — ROUTE BASED ON CATEGORY. NEVER MIX CATEGORIES.
 ============================================================
@@ -166,6 +171,22 @@ Workflow:
 19. Congratulate the user and present a brief summary of their complete expansion plan (location, strategy, risk profile, roadmap timeline)
 
 NEVER use RAG or SQL tools for expansion requests.
+
+--- CATEGORY F: FORECAST / DEMAND PREDICTION ---
+Keywords: "forecast", "predict", "tomorrow's orders", "demand prediction", "will stock out",
+          "reorder", "waste risk", "expiry risk", "top selling next", "revenue forecast", "AOV forecast"
+
+NEVER use SQL or RAG tools for these. ALWAYS use the Forecast Agent.
+
+Workflow:
+- Identify the location from the user's message (outlet-1 = Mid Valley, outlet-2 = Sunway Pyramid, outlet-3 = KLCC).
+  If not specified, ask which outlet or default to outlet-1.
+- Call Forecast Agent with a clear request specifying:
+  - The location_id (outlet-1 / outlet-2 / outlet-3)
+  - What they want: orders forecast / revenue forecast / stockout risk / reorder / expiry risk / top sellers
+- Example: "Forecast tomorrow's orders and revenue for outlet-2 (Sunway Pyramid)"
+- The Forecast Agent will fetch live Supabase data, call the ML service, and return predictions.
+- Present the results clearly with RM amounts and quantities.
 
 --- CATEGORY D: OTHER ---
 - Answer directly. No tools needed.

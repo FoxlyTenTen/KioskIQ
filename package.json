@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --names \"UI,RAG,SQL,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv,Site,ExpFeas,Market,Risk,Strat\" --prefix-colors \"cyan,blue,green,gray,magenta,yellow,red,purple,magenta,yellow,green,white,cyan,blue,orange,violet\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:sql\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\" \"npm run dev:site-selection\" \"npm run dev:expansion-feasibility\" \"npm run dev:market-researcher\" \"npm run dev:risk-manager\" \"npm run dev:strategic-planner\"",
+    "dev": "concurrently --names \"UI,RAG,SQL,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv,Forecast,Site,ExpFeas,Market,Risk,Strat\" --prefix-colors \"cyan,blue,green,gray,magenta,yellow,red,purple,magenta,yellow,green,teal,white,cyan,blue,orange,violet\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:sql\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\" \"npm run dev:forecast\" \"npm run dev:site-selection\" \"npm run dev:expansion-feasibility\" \"npm run dev:market-researcher\" \"npm run dev:risk-manager\" \"npm run dev:strategic-planner\"",
     "dev:ui": "next dev --turbopack",
     "dev:rag": "agents\\.venv\\Scripts\\python agents/rag_mcp_server.py",
     "dev:sql": "agents\\.venv\\Scripts\\python agents/sql_mcp_server.py",
@@ -20,6 +20,7 @@
     "dev:market-researcher": "agents\\.venv\\Scripts\\python agents/market_researcher_agent.py",
     "dev:risk-manager": "agents\\.venv\\Scripts\\python agents/risk_manager_agent.py",
     "dev:strategic-planner": "agents\\.venv\\Scripts\\python agents/strategic_planner_agent.py",
+    "dev:forecast": "agents\\.venv\\Scripts\\python agents/forecast_agent.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

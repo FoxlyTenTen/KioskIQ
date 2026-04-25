@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard,
-  Users,
-  TrendingUp,
   Package,
   MapPin,
   Settings,
@@ -16,7 +14,6 @@ import {
   Menu,
   X,
   RefreshCw,
-  LogOut,
   Calculator,
   Moon,
   Sun,
@@ -31,11 +28,9 @@ const TravelChat = dynamic(() => import('@/components/travel-chat'), { ssr: fals
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard Overview', path: '/' },
-  { icon: Calculator, label: 'Planning Assistant', path: '/planning', highlight: true },
-  { icon: Users, label: 'Labour Scheduling', path: '/labour' },
-  { icon: TrendingUp, label: 'Demand Forecasting', path: '/demand' },
-  { icon: Package, label: 'Inventory & Waste', path: '/inventory' },
+  { icon: Calculator, label: 'Retail Intelligence', path: '/planning', highlight: true },
   { icon: MapPin, label: 'Location & Strategy', path: '/location' },
+  { icon: Package, label: 'Inventory & Waste', path: '/inventory' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
@@ -57,7 +52,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     }
   };
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
 
   const {
@@ -83,9 +77,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  const handleLogout = () => {
-    router.push('/login');
-  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -133,14 +124,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted-foreground truncate">admin@kioskiq.com</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
         </div>
       </aside>
 
@@ -205,7 +188,7 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
       {/* Right: Persistent Chat Panel */}
       <div className="w-[400px] shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/30 shrink-0">
-          <h2 className="text-base font-semibold">Planning Assistant</h2>
+          <h2 className="text-base font-semibold">Retail Intelligence Hub</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             <span className="text-primary font-medium">Orchestrator</span> + <span className="text-primary/70 font-medium">Specialists</span>
           </p>
