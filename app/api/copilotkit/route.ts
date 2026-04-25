@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
   const feasibilityAgentUrl = process.env.FEASIBILITY_AGENT_URL || "http://localhost:9011";
   const investmentAgentUrl = process.env.INVESTMENT_AGENT_URL || "http://localhost:9012";
   const siteSelectionAgentUrl = process.env.SITE_SELECTION_AGENT_URL || "http://localhost:9020";
+  const expansionFeasibilityAgentUrl = process.env.EXPANSION_FEASIBILITY_AGENT_URL || "http://localhost:9021";
 
   // STEP 2: Define orchestrator URL (speaks AG-UI Protocol)
   const orchestratorUrl = process.env.ORCHESTRATOR_URL || "http://localhost:9000";
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
       feasibilityAgentUrl,
       investmentAgentUrl,
       siteSelectionAgentUrl,
+      expansionFeasibilityAgentUrl,
     ],
 
     orchestrationAgent,
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
       - Feasibility Agent (ADK): Deterministically checks plan feasibility (math-based).
       - Investment Agent (ADK): Recommends investment strategies based on profile.
       - Site Selection Expert Agent (ADK): Analyses Malaysian mall/commercial locations for F&B kiosk expansion. Returns 3 candidate sites with foot traffic, rent, competition scores, pros and cons.
+      - Expansion Feasibility Agent (ADK): Projects financial feasibility for a selected F&B kiosk expansion location. Returns monthly revenue, profit, break-even timeline, ROI, and risk classification. Use the exact name "Expansion Feasibility Agent" when calling this agent.
 
       WORKFLOW STRATEGY (SEQUENTIAL):
 
@@ -93,6 +96,8 @@ export async function POST(request: NextRequest) {
          - Step 3: The agent returns JSON with 3 location options. Call 'display_site_selection_options' with the full agent response to show the HITL selection card.
          - Step 4: Wait for user to select a location option (respond() will fire).
          - Step 5: Confirm the selection and tell the user their chosen location.
+         - Step 6: Call Expansion Feasibility Agent with the selected location's metrics (name, rent, foot traffic, competitor count, scores).
+         - Step 7: Call 'display_expansion_feasibility' with the full agent JSON response to show the projection card.
          - DO NOT trigger the financial planning flow for this.
 
       3. **Ad-Hoc Product Shopping / Quick Advice**:

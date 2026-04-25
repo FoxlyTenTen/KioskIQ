@@ -1,21 +1,12 @@
 "use client";
 
-/**
- * Financial Planning Chat Component
- *
- * Demonstrates key patterns:
- * - A2A Communication: Visualizes message flow between orchestrator and agents
- * - HITL: Financial planning form workflows
- * - Generative UI: Extracts structured data from agent responses
- * - Multi-Agent: Coordinates agents across ADK via A2A Protocol
- */
-
 import React, { useState, useEffect } from "react";
 import { CopilotKit, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
-import { useCopilotAction } from "@copilotkit/react-core";
+import { useCopilotAction, useCoAgent } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css";
 import "./style.css";
+
 import type {
   TravelChatProps,
   ProductResearchData,
@@ -27,22 +18,22 @@ import type {
   InvestmentStrategyData,
   SiteSelectionData,
 } from "./types";
+
 import { MessageToA2A } from "./a2a/MessageToA2A";
 import { MessageFromA2A } from "./a2a/MessageFromA2A";
-
 import { FinancialPlanningForm } from "./forms/FinancialPlanningForm";
 import { ExpansionDetailsForm } from "./forms/ExpansionDetailsForm";
-
 import { ProductCard } from "./ProductCard";
 import { MasterPlanCard } from "./MasterPlanCard";
 import { SummaryPlanCard } from "./SummaryPlanCard";
 import { FeasibilityCard } from "./FeasibilityCard";
 import { InvestmentCard } from "./InvestmentCard";
 import { SiteSelectionCard } from "./SiteSelectionCard";
+import { ExpansionFeasibilityCard } from "./ExpansionFeasibilityCard";
+import type { ExpansionFeasibilityData } from "./ExpansionFeasibilityCard";
+import { normalizeSiteSelectionData } from "./site-selection-utils";
 
-
-// Import useCoAgent from CopilotKit
-import { useCoAgent } from "@copilotkit/react-core";
+// ─────────────────────────────────────────────────────────────────────────────
 
 const ChatInner = (props: TravelChatProps) => {
   const {
@@ -53,228 +44,148 @@ const ChatInner = (props: TravelChatProps) => {
     onFeasibilityUpdate,
     onInvestmentUpdate,
     onSelectedSiteUpdate,
+    onExpansionFeasibilityUpdate,
   } = props;
-  // Shared State Management for Financial Planning
+
+  // ── Shared agent state (co-agent sync) ──────────────────────────────────────
   const { state: financialState, setState: setFinancialState } = useCoAgent<{
     financial_plan?: FinancialPlanData;
     summary_plan?: SummaryPlanData;
     feasibility?: FeasibilityData;
     investment?: InvestmentStrategyData;
-  }>({
-    name: "a2a_chat",
-    initialState: {},
-  });
+  }>({ name: "a2a_chat", initialState: {} });
 
-  // Sync Props (User Edits) -> Agent State
   useEffect(() => {
-    if (props.financialPlanData) setFinancialState({ ...financialState, financial_plan: props.financialPlanData });
+    if (props.financialPlanData)
+      setFinancialState({ ...financialState, financial_plan: props.financialPlanData });
   }, [props.financialPlanData]);
 
   useEffect(() => {
-    if (props.summaryPlanData) setFinancialState({ ...financialState, summary_plan: props.summaryPlanData });
+    if (props.summaryPlanData)
+      setFinancialState({ ...financialState, summary_plan: props.summaryPlanData });
   }, [props.summaryPlanData]);
 
   useEffect(() => {
-    if (props.feasibilityData) setFinancialState({ ...financialState, feasibility: props.feasibilityData });
+    if (props.feasibilityData)
+      setFinancialState({ ...financialState, feasibility: props.feasibilityData });
   }, [props.feasibilityData]);
 
   useEffect(() => {
-    if (props.investmentData) setFinancialState({ ...financialState, investment: props.investmentData });
+    if (props.investmentData)
+      setFinancialState({ ...financialState, investment: props.investmentData });
   }, [props.investmentData]);
 
-
-  // Sync Agent State (Agent Updates) -> Parent Props (UI)
   useEffect(() => {
-    if (financialState?.financial_plan && JSON.stringify(financialState.financial_plan) !== JSON.stringify(props.financialPlanData)) {
+    if (financialState?.financial_plan &&
+      JSON.stringify(financialState.financial_plan) !== JSON.stringify(props.financialPlanData))
       props.onFinancialPlanUpdate?.(financialState.financial_plan);
-    }
-    if (financialState?.summary_plan && JSON.stringify(financialState.summary_plan) !== JSON.stringify(props.summaryPlanData)) {
+
+    if (financialState?.summary_plan &&
+      JSON.stringify(financialState.summary_plan) !== JSON.stringify(props.summaryPlanData))
       props.onSummaryPlanUpdate?.(financialState.summary_plan);
-    }
-    if (financialState?.feasibility && JSON.stringify(financialState.feasibility) !== JSON.stringify(props.feasibilityData)) {
+
+    if (financialState?.feasibility &&
+      JSON.stringify(financialState.feasibility) !== JSON.stringify(props.feasibilityData))
       props.onFeasibilityUpdate?.(financialState.feasibility);
-    }
-    if (financialState?.investment && JSON.stringify(financialState.investment) !== JSON.stringify(props.investmentData)) {
+
+    if (financialState?.investment &&
+      JSON.stringify(financialState.investment) !== JSON.stringify(props.investmentData))
       props.onInvestmentUpdate?.(financialState.investment);
-    }
   }, [financialState]);
-  
+
+  // ── Extract structured data from A2A result messages ────────────────────────
   const { visibleMessages } = useCopilotChat();
 
-  // Extract structured data from A2A agent responses
   useEffect(() => {
-    const extractDataFromMessages = () => {
-      for (const message of visibleMessages) {
-        const msg = message as any;
+    for (const message of visibleMessages) {
+      const msg = message as any;
+      if (msg.type !== "ResultMessage" || msg.actionName !== "send_message_to_a2a_agent") continue;
 
-        if (msg.type === "ResultMessage" && msg.actionName === "send_message_to_a2a_agent") {
-          try {
-            const result = msg.result;
-            let parsed;
+      try {
+        const raw: string | object = msg.result;
+        let parsed: any;
 
-            if (typeof result === "string") {
-              let cleanResult = result;
-              if (result.startsWith("A2A Agent Response: ")) {
-                cleanResult = result.substring("A2A Agent Response: ".length);
-              }
-              parsed = JSON.parse(cleanResult);
-            } else if (typeof result === "object" && result !== null) {
-              parsed = result;
-            }
-
-            if (parsed) {
-              if (parsed.query && parsed.results && Array.isArray(parsed.results)) {
-                onProductUpdate?.(parsed as ProductResearchData);
-              }
-              else if (parsed.monthlyIncome && parsed.budgetBreakdown && Array.isArray(parsed.budgetBreakdown)) {
-                onFinancialPlanUpdate?.(parsed as FinancialPlanData);
-              }
-              else if (
-                parsed.plan_title &&
-                parsed.milestones &&
-                Array.isArray(parsed.milestones) &&
-                typeof parsed.target_amount === 'number' &&
-                typeof parsed.monthly_contribution === 'number'
-              ) {
-                onMasterPlanUpdate?.(parsed as MasterFinancialPlanData);
-              }
-              else if (parsed.dashboard_message && parsed.timestamp) {
-                onSummaryPlanUpdate?.(parsed as SummaryPlanData);
-              }
-              else if ((typeof parsed.gap === 'number' || !isNaN(Number(parsed.gap))) && parsed.feedback_message) {
-                // Ensure gap is a number
-                if (typeof parsed.gap !== 'number') parsed.gap = Number(parsed.gap);
-                onFeasibilityUpdate?.(parsed as FeasibilityData);
-              }
-              else if (parsed.allocation && parsed.strategyName) {
-                onInvestmentUpdate?.(parsed as InvestmentStrategyData);
-              }
-            }
-          } catch (e) {
-          }
+        if (typeof raw === "string") {
+          const clean = raw.startsWith("A2A Agent Response: ")
+            ? raw.slice("A2A Agent Response: ".length)
+            : raw;
+          parsed = JSON.parse(clean);
+        } else if (typeof raw === "object" && raw !== null) {
+          parsed = raw;
         }
-      }
-    };
 
-    extractDataFromMessages();
-  }, [
-    visibleMessages,
-    onProductUpdate,
-    onFinancialPlanUpdate,
-    onMasterPlanUpdate,
-  ]);
+        if (!parsed) continue;
 
-  // Register A2A message visualizer (renders green/blue communication boxes)
+        if (parsed.query && Array.isArray(parsed.results))
+          onProductUpdate?.(parsed as ProductResearchData);
+        else if (parsed.monthlyIncome && Array.isArray(parsed.budgetBreakdown))
+          onFinancialPlanUpdate?.(parsed as FinancialPlanData);
+        else if (parsed.plan_title && Array.isArray(parsed.milestones))
+          onMasterPlanUpdate?.(parsed as MasterFinancialPlanData);
+        else if (parsed.dashboard_message && parsed.timestamp)
+          onSummaryPlanUpdate?.(parsed as SummaryPlanData);
+        else if (parsed.feedback_message && parsed.gap !== undefined) {
+          if (typeof parsed.gap !== "number") parsed.gap = Number(parsed.gap);
+          onFeasibilityUpdate?.(parsed as FeasibilityData);
+        } else if (parsed.allocation && parsed.strategyName)
+          onInvestmentUpdate?.(parsed as InvestmentStrategyData);
+        else if (parsed.agentName === "Expansion Feasibility Agent" && parsed.breakEvenMonths !== undefined)
+          onExpansionFeasibilityUpdate?.(parsed as ExpansionFeasibilityData);
+      } catch (_) {}
+    }
+  }, [visibleMessages, onProductUpdate, onFinancialPlanUpdate, onMasterPlanUpdate]);
+
+  // ── A2A visualiser ───────────────────────────────────────────────────────────
   useCopilotAction({
     name: "send_message_to_a2a_agent",
     description: "Sends a message to an A2A agent",
     available: "frontend",
     parameters: [
-      {
-        name: "agentName",
-        type: "string",
-        description: "The name of the A2A agent to send the message to",
-      },
-      {
-        name: "task",
-        type: "string",
-        description: "The message to send to the A2A agent",
-      },
+      { name: "agentName", type: "string", description: "The name of the A2A agent" },
+      { name: "task",      type: "string", description: "The message to send"       },
     ],
-    render: (actionRenderProps: MessageActionRenderProps) => {
-      return (
-        <>
-          <MessageToA2A {...actionRenderProps} />
-          <MessageFromA2A {...actionRenderProps} />
-        </>
-      );
-    },
+    render: (actionRenderProps: MessageActionRenderProps) => (
+      <>
+        <MessageToA2A {...actionRenderProps} />
+        <MessageFromA2A {...actionRenderProps} />
+      </>
+    ),
   });
 
-
-
-
-  // Register HITL financial planning form
+  // ── HITL: Financial planning form ────────────────────────────────────────────
   useCopilotAction({
     name: "gather_financial_planning_details",
-    description: "Gather financial planning details from the user (income, expenses, goal)",
+    description: "Gather financial planning details from the user",
     parameters: [
-      {
-        name: "goalDescription",
-        type: "string",
-        description: "Description of the goal (e.g., 'Buy iPhone 17')",
-        required: false,
-      },
-      {
-        name: "planType",
-        type: "string",
-        description: "Plan Type (short, medium, long)",
-        required: false,
-      },
-      {
-        name: "monthlyIncome",
-        type: "number",
-        description: "Monthly Income",
-        required: false,
-      },
-      {
-        name: "monthlyTargetedExpenses",
-        type: "number",
-        description: "Monthly Targeted Expenses",
-        required: false,
-      },
-      {
-        name: "savingGoalEnd",
-        type: "number",
-        description: "Saving Goal End Amount",
-        required: false,
-      },
-      {
-        name: "riskTolerance",
-        type: "string",
-        description: "Risk Tolerance (Conservative, Moderate, Aggressive)",
-        required: false,
-      }
+      { name: "goalDescription",          type: "string", required: false },
+      { name: "planType",                 type: "string", required: false },
+      { name: "monthlyIncome",            type: "number", required: false },
+      { name: "monthlyTargetedExpenses",  type: "number", required: false },
+      { name: "savingGoalEnd",            type: "number", required: false },
+      { name: "riskTolerance",            type: "string", required: false },
     ],
-    renderAndWaitForResponse: ({ args, respond }) => {
-      return <FinancialPlanningForm args={args} respond={respond} />;
-    },
+    renderAndWaitForResponse: ({ args, respond }) => (
+      <FinancialPlanningForm args={args} respond={respond} />
+    ),
   });
 
-
-
-
-
+  // ── Display actions (push data to canvas) ───────────────────────────────────
   useCopilotAction({
     name: "display_product_research",
     description: "Display product research results",
     available: "frontend",
-    parameters: [
-      {
-        name: "data",
-        type: "object",
-        description: "The product research data",
-      },
-    ],
+    parameters: [{ name: "data", type: "object", description: "Product research data" }],
     render: ({ args }) => {
       if (!args.data) return <></>;
       return <ProductCard data={args.data as ProductResearchData} />;
     },
   });
 
-
-
   useCopilotAction({
     name: "display_master_plan",
     description: "Display the Master Financial Plan",
     available: "frontend",
-    parameters: [
-      {
-        name: "data",
-        type: "object",
-        description: "The master plan data",
-      },
-    ],
+    parameters: [{ name: "data", type: "object", description: "Master plan data" }],
     render: ({ args }) => {
       if (!args.data) return <></>;
       return <MasterPlanCard data={args.data as MasterFinancialPlanData} />;
@@ -285,13 +196,7 @@ const ChatInner = (props: TravelChatProps) => {
     name: "display_summary_plan",
     description: "Display the Summary Plan Dashboard",
     available: "frontend",
-    parameters: [
-      {
-        name: "data",
-        type: "object",
-        description: "The summary plan data",
-      },
-    ],
+    parameters: [{ name: "data", type: "object", description: "Summary plan data" }],
     render: ({ args }) => {
       if (!args.data) return <></>;
       return <SummaryPlanCard data={args.data as SummaryPlanData} />;
@@ -302,13 +207,7 @@ const ChatInner = (props: TravelChatProps) => {
     name: "display_feasibility_check",
     description: "Display the Feasibility Check Results",
     available: "frontend",
-    parameters: [
-      {
-        name: "data",
-        type: "object",
-        description: "The feasibility data",
-      },
-    ],
+    parameters: [{ name: "data", type: "object", description: "Feasibility data" }],
     render: ({ args }) => {
       if (!args.data) return <></>;
       return <FeasibilityCard data={args.data as FeasibilityData} />;
@@ -319,92 +218,67 @@ const ChatInner = (props: TravelChatProps) => {
     name: "display_investment_strategy",
     description: "Display the Investment Strategy",
     available: "frontend",
-    parameters: [
-      {
-        name: "data",
-        type: "object",
-        description: "The investment strategy data",
-      },
-    ],
+    parameters: [{ name: "data", type: "object", description: "Investment strategy data" }],
     render: ({ args }) => {
       if (!args.data) return <></>;
       return <InvestmentCard data={args.data as InvestmentStrategyData} />;
     },
   });
 
-  // HITL Step 1: gather expansion details (form before agent runs)
   useCopilotAction({
-    name: "gather_expansion_details",
-    description: "Gather business location expansion details from the user (target area, budget, business type)",
-    parameters: [
-      {
-        name: "targetArea",
-        type: "string",
-        description: "Target area or city for expansion",
-        required: false,
-      },
-      {
-        name: "budgetRange",
-        type: "string",
-        description: "Monthly rent budget range (low, moderate, high)",
-        required: false,
-      },
-      {
-        name: "businessType",
-        type: "string",
-        description: "Type of business (e.g. F&B Kiosk, Bubble Tea)",
-        required: false,
-      },
-    ],
+    name: "display_expansion_feasibility",
+    description: "Display the Expansion Financial Feasibility analysis card to the user (MANDATORY HITL STEP)",
+    available: "frontend",
+    parameters: [{ name: "data", type: "object", description: "Expansion feasibility data" }],
     renderAndWaitForResponse: ({ args, respond }) => {
-      return <ExpansionDetailsForm args={args} respond={respond} />;
+      if (!args.data) return <></>;
+      const feasData = args.data as ExpansionFeasibilityData;
+      
+      // Update canvas state
+      onExpansionFeasibilityUpdate?.(feasData);
+
+      return (
+        <div className="space-y-3">
+          <ExpansionFeasibilityCard data={feasData} />
+          <button
+            onClick={() => respond?.("Expansion feasibility analysis reviewed and accepted.")}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all active:scale-[0.98] text-sm"
+          >
+            Confirm Analysis & Finish
+          </button>
+        </div>
+      );
     },
   });
 
-  // HITL Step 2: show 3 location options — user picks one, respond() sends selection back
+  // ── HITL: Expansion details form ─────────────────────────────────────────────
+  useCopilotAction({
+    name: "gather_expansion_details",
+    description: "Gather business location expansion details from the user",
+    parameters: [
+      { name: "targetArea",    type: "string", required: false },
+      { name: "budgetRange",   type: "string", required: false },
+      { name: "businessType",  type: "string", required: false },
+    ],
+    renderAndWaitForResponse: ({ args, respond }) => (
+      <ExpansionDetailsForm args={args} respond={respond} />
+    ),
+  });
+
+  // ── HITL: Site selection card ─────────────────────────────────────────────────
   useCopilotAction({
     name: "display_site_selection_options",
     description: "Display 3 candidate location options for the user to choose from",
     parameters: [
-      {
-        name: "agentName",
-        type: "string",
-        description: "Agent name",
-        required: false,
-      },
-      {
-        name: "actionType",
-        type: "string",
-        description: "Action type identifier",
-        required: false,
-      },
-      {
-        name: "targetArea",
-        type: "string",
-        description: "Target area",
-        required: false,
-      },
-      {
-        name: "userPrompt",
-        type: "string",
-        description: "User-facing prompt",
-        required: false,
-      },
-      {
-        name: "options",
-        type: "object[]",
-        description: "Array of 3 location options",
-        required: false,
-      },
-      {
-        name: "nextStep",
-        type: "string",
-        description: "Next step description",
-        required: false,
-      },
+      { name: "agentName",   type: "string",   required: false },
+      { name: "actionType",  type: "string",   required: false },
+      { name: "targetArea",  type: "string",   required: false },
+      { name: "userPrompt",  type: "string",   required: false },
+      { name: "options",     type: "object[]", required: false },
+      { name: "nextStep",    type: "string",   required: false },
     ],
     renderAndWaitForResponse: ({ args, respond }) => {
-      const data = args as unknown as SiteSelectionData;
+      const data = normalizeSiteSelectionData(args);
       if (!data?.options?.length) return <></>;
       const wrappedRespond = respond
         ? (selection: object) => {
@@ -419,6 +293,7 @@ const ChatInner = (props: TravelChatProps) => {
     },
   });
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="h-full">
       <CopilotChat
@@ -432,6 +307,8 @@ const ChatInner = (props: TravelChatProps) => {
     </div>
   );
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function TravelChat(props: TravelChatProps) {
   return (

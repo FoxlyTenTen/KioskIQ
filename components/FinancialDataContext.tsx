@@ -10,6 +10,7 @@ import type {
   InvestmentStrategyData,
   SiteSelectionOption,
 } from "./types";
+import type { ExpansionFeasibilityData } from "./ExpansionFeasibilityCard";
 
 interface FinancialDataState {
   productData: ProductResearchData | null;
@@ -19,6 +20,7 @@ interface FinancialDataState {
   feasibilityData: FeasibilityData | null;
   investmentData: InvestmentStrategyData | null;
   selectedSiteOption: SiteSelectionOption | null;
+  expansionFeasibilityData: ExpansionFeasibilityData | null;
   setProductData: (d: ProductResearchData | null) => void;
   setFinancialPlanData: (d: FinancialPlanData | null) => void;
   setMasterPlanData: (d: MasterFinancialPlanData | null) => void;
@@ -26,6 +28,7 @@ interface FinancialDataState {
   setFeasibilityData: (d: FeasibilityData | null) => void;
   setInvestmentData: (d: InvestmentStrategyData | null) => void;
   setSelectedSiteOption: (d: SiteSelectionOption | null) => void;
+  setExpansionFeasibilityData: (d: ExpansionFeasibilityData | null) => void;
 }
 
 const FinancialDataContext = createContext<FinancialDataState | null>(null);
@@ -38,6 +41,7 @@ export function FinancialDataProvider({ children }: { children: React.ReactNode 
   const [feasibilityData, setFeasibilityData] = useState<FeasibilityData | null>(null);
   const [investmentData, setInvestmentData] = useState<InvestmentStrategyData | null>(null);
   const [selectedSiteOption, setSelectedSiteOption] = useState<SiteSelectionOption | null>(null);
+  const [expansionFeasibilityData, setExpansionFeasibilityData] = useState<ExpansionFeasibilityData | null>(null);
 
   return (
     <FinancialDataContext.Provider
@@ -49,6 +53,7 @@ export function FinancialDataProvider({ children }: { children: React.ReactNode 
         feasibilityData,
         investmentData,
         selectedSiteOption,
+        expansionFeasibilityData,
         setProductData,
         setFinancialPlanData,
         setMasterPlanData,
@@ -56,6 +61,7 @@ export function FinancialDataProvider({ children }: { children: React.ReactNode 
         setFeasibilityData,
         setInvestmentData,
         setSelectedSiteOption,
+        setExpansionFeasibilityData,
       }}
     >
       {children}

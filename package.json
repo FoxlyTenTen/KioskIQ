@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --names \"UI,RAG,SQL,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv,Site\" --prefix-colors \"cyan,blue,green,gray,magenta,yellow,red,purple,magenta,yellow,green,white\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:sql\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\" \"npm run dev:site-selection\"",
+    "dev": "concurrently --names \"UI,RAG,SQL,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv,Site,ExpFeas\" --prefix-colors \"cyan,blue,green,gray,magenta,yellow,red,purple,magenta,yellow,green,white,cyan\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:sql\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\" \"npm run dev:site-selection\" \"npm run dev:expansion-feasibility\"",
     "dev:ui": "next dev --turbopack",
     "dev:rag": "agents\\.venv\\Scripts\\python agents/rag_mcp_server.py",
     "dev:sql": "agents\\.venv\\Scripts\\python agents/sql_mcp_server.py",
@@ -16,6 +16,7 @@
     "dev:feasibility": "agents\\.venv\\Scripts\\python agents/feasibility_agent.py",
     "dev:investment": "agents\\.venv\\Scripts\\python agents/investment_agent.py",
     "dev:site-selection": "agents\\.venv\\Scripts\\python agents/site_selection_agent.py",
+    "dev:expansion-feasibility": "agents\\.venv\\Scripts\\python agents/expansion_feasibility_agent.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

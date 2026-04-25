@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "re
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { type SiteSelectionOption } from "./types";
+import { normalizeSiteSelectionOption } from "./site-selection-utils";
 
 // Fix default Leaflet marker icons broken by webpack
 const DefaultIcon = L.icon({
@@ -31,8 +32,10 @@ function MapFly({ center }: { center: [number, number] }) {
 }
 
 export default function SiteMapInner({ data }: { data: SiteSelectionOption }) {
-  if (!data.coordinates) return null;
-  const center: [number, number] = [data.coordinates.lat, data.coordinates.lng];
+  const normalized = normalizeSiteSelectionOption(data);
+
+  if (!normalized.coordinates) return null;
+  const center: [number, number] = [normalized.coordinates.lat, normalized.coordinates.lng];
 
   return (
     <MapContainer
@@ -51,17 +54,17 @@ export default function SiteMapInner({ data }: { data: SiteSelectionOption }) {
       <Marker position={center} icon={TargetIcon}>
         <Popup>
           <div className="min-w-[140px]">
-            <p className="font-bold text-blue-700 border-b pb-1 mb-1">{data.name}</p>
-            <p className="text-xs text-gray-600">{data.type}</p>
-            <p className="text-xs font-semibold mt-1">Score: {data.scores.overallScore}/100</p>
-            <p className="text-xs">Rent: RM {data.metrics.rentMonthlyRM.toLocaleString()}/mo</p>
-            <p className="text-xs">Drive: {data.metrics.driveTimeFromCityCentre}</p>
+            <p className="font-bold text-blue-700 border-b pb-1 mb-1">{normalized.name}</p>
+            <p className="text-xs text-gray-600">{normalized.type}</p>
+            <p className="text-xs font-semibold mt-1">Score: {normalized.scores.overallScore}/100</p>
+            <p className="text-xs">Rent: RM {normalized.metrics.rentMonthlyRM.toLocaleString()}/mo</p>
+            <p className="text-xs">Drive: {normalized.metrics.driveTimeFromCityCentre}</p>
           </div>
         </Popup>
       </Marker>
 
       {/* Competitor markers */}
-      {data.competitors?.map((comp, i) => (
+      {normalized.competitors?.map((comp, i) => (
         <CircleMarker
           key={i}
           center={[comp.coordinates.lat, comp.coordinates.lng]}

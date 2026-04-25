@@ -1,12 +1,14 @@
 /**
  * SiteSelectionCard Component
  *
- * HITL card — shows 3 candidate location options from the Site Selection Expert Agent.
- * User expands a card to see pros/cons, then taps "Select This Location" to send the
- * choice back to the orchestrator via respond().
+ * HITL card showing candidate location options from the Site Selection Expert Agent.
  */
 import React, { useState } from "react";
 import { type SiteSelectionData, type SiteSelectionOption } from "./types";
+import {
+  normalizeSiteSelectionData,
+  normalizeSiteSelectionOption,
+} from "./site-selection-utils";
 
 interface SiteSelectionCardProps {
   data: SiteSelectionData;
@@ -17,31 +19,32 @@ const SCORE_COLOR = (score: number) =>
   score >= 75
     ? "bg-emerald-100 text-emerald-700 border-emerald-200"
     : score >= 55
-    ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-    : "bg-red-100 text-red-700 border-red-200";
+      ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+      : "bg-red-100 text-red-700 border-red-200";
 
 const TYPE_BADGE: Record<string, string> = {
   "High-Traffic Premium": "bg-purple-100 text-purple-700",
-  "Growing Suburban":     "bg-blue-100 text-blue-700",
-  "Community Hub":        "bg-green-100 text-green-700",
+  "Growing Suburban": "bg-blue-100 text-blue-700",
+  "Community Hub": "bg-green-100 text-green-700",
 };
 
 export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => {
+  const normalizedData = normalizeSiteSelectionData(data);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selected, setSelected] = useState<SiteSelectionOption | null>(null);
 
   const handleSelect = (opt: SiteSelectionOption) => {
-    setSelected(opt);
+    const normalizedOption = normalizeSiteSelectionOption(opt);
+    setSelected(normalizedOption);
     respond?.({
-      selectedOptionId: opt.optionId,
-      selectedName: opt.name,
-      selectedType: opt.type,
-      metrics: opt.metrics,
-      scores: opt.scores,
+      selectedOptionId: normalizedOption.optionId,
+      selectedName: normalizedOption.name,
+      selectedType: normalizedOption.type,
+      metrics: normalizedOption.metrics,
+      scores: normalizedOption.scores,
     });
   };
 
-  // After user selects — show confirmation card
   if (selected) {
     return (
       <div className="bg-green-50/95 border border-green-200 rounded-xl p-4 my-3 shadow-sm animate-in fade-in slide-in-from-bottom-2">
@@ -57,9 +60,9 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
               <span className="text-gray-500">{selected.type}</span>
             </p>
             <div className="flex gap-3 mt-1 text-[11px] text-gray-500">
-              <span>🚶 {selected.metrics.footTrafficDaily.toLocaleString()}/day</span>
-              <span>💰 RM {selected.metrics.rentMonthlyRM.toLocaleString()}/mo</span>
-              <span>🏆 Score {selected.scores.overallScore}</span>
+              <span>Traffic {selected.metrics.footTrafficDaily.toLocaleString()}/day</span>
+              <span>Rent RM {selected.metrics.rentMonthlyRM.toLocaleString()}/mo</span>
+              <span>Score {selected.scores.overallScore}</span>
             </div>
           </div>
         </div>
@@ -69,30 +72,28 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
 
   return (
     <div className="bg-white/90 backdrop-blur-md rounded-xl p-4 my-3 border-2 border-indigo-200 shadow-lg animate-in fade-in slide-in-from-bottom-5">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">🏪</span>
+        <span className="text-xl">Store</span>
         <div>
           <h3 className="text-base font-bold text-indigo-900">
-            Site Selection — {data.targetArea}
+            Site Selection - {normalizedData.targetArea}
           </h3>
-          <p className="text-xs text-indigo-500">{data.userPrompt}</p>
+          <p className="text-xs text-indigo-500">{normalizedData.userPrompt}</p>
         </div>
       </div>
 
       <div className="space-y-3">
-        {data.options.map((opt) => {
+        {normalizedData.options.map((opt, idx) => {
           const isOpen = expanded === opt.optionId;
           return (
             <div
-              key={opt.optionId}
+              key={`${opt.optionId}-${idx}`}
               className={`rounded-lg border transition-all duration-200 ${
                 isOpen
                   ? "border-indigo-400 bg-indigo-50/60"
                   : "border-gray-200 bg-white hover:border-indigo-300"
               }`}
             >
-              {/* Collapsed header — always visible */}
               <button
                 className="w-full text-left p-3"
                 onClick={() => setExpanded(isOpen ? null : opt.optionId)}
@@ -111,7 +112,6 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed">{opt.summary}</p>
                   </div>
-                  {/* Overall score badge */}
                   <div
                     className={`flex-shrink-0 text-center px-2 py-1 rounded-lg border text-sm font-bold ${SCORE_COLOR(
                       opt.scores.overallScore
@@ -122,23 +122,29 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
                   </div>
                 </div>
 
-                {/* Quick metrics */}
                 <div className="grid grid-cols-2 gap-1.5 mt-2">
-                  <MetricPill label="Foot Traffic" value={`${opt.metrics.footTrafficDaily.toLocaleString()}/day`} />
-                  <MetricPill label="Rent" value={`RM ${opt.metrics.rentMonthlyRM.toLocaleString()}/mo`} />
-                  <MetricPill label="Competitors" value={`${opt.metrics.competitorCount} nearby`} />
+                  <MetricPill
+                    label="Foot Traffic"
+                    value={`${opt.metrics.footTrafficDaily.toLocaleString()}/day`}
+                  />
+                  <MetricPill
+                    label="Rent"
+                    value={`RM ${opt.metrics.rentMonthlyRM.toLocaleString()}/mo`}
+                  />
+                  <MetricPill
+                    label="Competitors"
+                    value={`${opt.metrics.competitorCount} nearby`}
+                  />
                   <MetricPill label="Drive Time" value={opt.metrics.driveTimeFromCityCentre} />
                 </div>
 
                 <p className="text-[10px] text-indigo-400 text-center mt-2">
-                  {isOpen ? "▲ Collapse" : "▼ View pros & cons"}
+                  {isOpen ? "Collapse" : "View pros and cons"}
                 </p>
               </button>
 
-              {/* Expanded content */}
               {isOpen && (
                 <div className="px-3 pb-3 space-y-3">
-                  {/* Score bars */}
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                     <ScoreBar label="Foot Traffic" score={opt.scores.footTrafficScore} />
                     <ScoreBar label="Affordability" score={opt.scores.affordabilityScore} />
@@ -146,42 +152,39 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
                     <ScoreBar label="Growth" score={opt.scores.growthScore} />
                   </div>
 
-                  {/* Pros */}
                   <div>
                     <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-1">
                       Pros
                     </p>
                     <ul className="space-y-0.5">
-                      {opt.pros.map((p, i) => (
+                      {opt.pros.map((pro, i) => (
                         <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
                           <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span>
-                          {p}
+                          {pro}
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  {/* Cons */}
                   <div>
                     <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wide mb-1">
                       Cons
                     </p>
                     <ul className="space-y-0.5">
-                      {opt.cons.map((c, i) => (
+                      {opt.cons.map((con, i) => (
                         <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
-                          <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
-                          {c}
+                          <span className="text-red-400 mt-0.5 flex-shrink-0">×</span>
+                          {con}
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  {/* HITL Select button */}
                   <button
                     onClick={() => handleSelect(opt)}
                     className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2.5 px-4 text-sm rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] mt-1"
                   >
-                    Select This Location →
+                    Select This Location {"->"}
                   </button>
                 </div>
               )}
@@ -190,7 +193,7 @@ export const SiteSelectionCard = ({ data, respond }: SiteSelectionCardProps) => 
         })}
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-3 text-center">{data.nextStep}</p>
+      <p className="text-[10px] text-gray-400 mt-3 text-center">{normalizedData.nextStep}</p>
     </div>
   );
 };
@@ -203,14 +206,15 @@ const MetricPill = ({ label, value }: { label: string; value: string }) => (
 );
 
 const ScoreBar = ({ label, score }: { label: string; score: number }) => {
-  const pct = Math.min(100, score * 10);
+  const pct = Math.min(100, score);
   const color =
-    score >= 7 ? "bg-emerald-400" : score >= 5 ? "bg-yellow-400" : "bg-red-400";
+    score >= 70 ? "bg-emerald-400" : score >= 50 ? "bg-yellow-400" : "bg-red-400";
+
   return (
     <div>
       <div className="flex justify-between text-[9px] text-gray-500 mb-0.5">
         <span>{label}</span>
-        <span>{score}/10</span>
+        <span>{score}/100</span>
       </div>
       <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />

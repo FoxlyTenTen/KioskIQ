@@ -239,6 +239,7 @@ export interface TravelChatProps {
   onFeasibilityUpdate?: (data: FeasibilityData | null) => void;
   onInvestmentUpdate?: (data: InvestmentStrategyData | null) => void;
   onSelectedSiteUpdate?: (data: SiteSelectionOption) => void;
+  onExpansionFeasibilityUpdate?: (data: import("../ExpansionFeasibilityCard").ExpansionFeasibilityData) => void;
 }
 
 export interface AgentStyle {

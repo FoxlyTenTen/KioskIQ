@@ -1,6 +1,6 @@
 """
-Fast Orchestrator Agent (ADK + AG-UI Protocol)
-Using ILMU GLM-5.1 through Anthropic-compatible endpoint.
+Orchestrator Agent (ADK + AG-UI Protocol)
+Using Gemini (fast). GLM-5.1 path commented out below.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
 from google.adk.agents import LlmAgent
 from google.adk.apps import App
-from google.adk.models.lite_llm import LiteLlm
+# from google.adk.models.lite_llm import LiteLlm  # GLM path — commented out
 from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
 from google.adk.tools.mcp_tool import mcp_session_manager as _msm
@@ -35,11 +35,8 @@ async def _safe_session_close(self):
             _, exit_stack = self._sessions[session_key]
             try:
                 await exit_stack.aclose()
-            except BaseException as e:
-                print(
-                    f"Warning: Error during MCP session cleanup for {session_key}: {e}",
-                    file=self._errlog,
-                )
+            except BaseException:
+                pass  # anyio cancel-scope mismatch on session teardown — safe to ignore
             finally:
                 del self._sessions[session_key]
 
@@ -49,17 +46,16 @@ _msm.MCPSessionManager.close = _safe_session_close
 
 os.environ["GOOGLE_ADK_PROGRESSIVE_SSE_STREAMING"] = "1"
 
-ILMU_API_KEY = os.getenv("ILMU_API_KEY")
-ILMU_MODEL = os.getenv("ILMU_MODEL", "ilmu-glm-5.1")
+# ── Gemini (active) ────────────────────────────────────────────────────────────
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-if not ILMU_API_KEY:
-    raise ValueError("Missing ILMU_API_KEY in .env file")
-
-os.environ["ANTHROPIC_API_KEY"] = ILMU_API_KEY
-os.environ["ANTHROPIC_BASE_URL"] = os.getenv(
-    "ANTHROPIC_BASE_URL",
-    "https://api.ilmu.ai/anthropic"
-)
+# ── GLM-5.1 via ILMU (commented out — slow) ───────────────────────────────────
+# ILMU_API_KEY = os.getenv("ILMU_API_KEY")
+# ILMU_MODEL = os.getenv("ILMU_MODEL", "ilmu-glm-5.1")
+# if not ILMU_API_KEY:
+#     raise ValueError("Missing ILMU_API_KEY in .env file")
+# os.environ["ANTHROPIC_API_KEY"] = ILMU_API_KEY
+# os.environ["ANTHROPIC_BASE_URL"] = os.getenv("ANTHROPIC_BASE_URL", "https://api.ilmu.ai/anthropic")
 
 current_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -152,7 +148,10 @@ Workflow:
    (include targetArea, lat, lng, budgetRange, businessType in the message to the agent)
 3. The agent returns 3 location options — call display_site_selection_options to show them
 4. Wait for user to select a location (HITL respond)
-5. Confirm the selection and ask if they want to proceed to financial analysis
+5. Confirm the selected location to the user
+6. Immediately call Expansion Feasibility Agent with ALL of the selected location's metrics
+   (include: selectedName, rentMonthlyRM, footTrafficDaily, competitorCount, driveTimeFromCityCentre, overallScore)
+7. Call display_expansion_feasibility with the full agent JSON response to show the projection card
 
 NEVER use RAG or SQL tools for expansion requests.
 
@@ -177,7 +176,8 @@ sql_toolset = McpToolset(connection_params=SseConnectionParams(url=SQL_MCP_URL))
 
 orchestrator_agent = LlmAgent(
     name="OrchestratorAgent",
-    model=LiteLlm(model=f"anthropic/{ILMU_MODEL}"),
+    model=GEMINI_MODEL,                       # Gemini (fast)
+    # model=LiteLlm(model=f"anthropic/{ILMU_MODEL}"),  # GLM — commented out
     tools=[sql_toolset, rag_toolset],
     instruction=ORCHESTRATOR_INSTRUCTION,
 )
@@ -204,9 +204,8 @@ add_adk_fastapi_endpoint(app, adk_orchestrator_agent, path="/")
 if __name__ == "__main__":
     port = int(os.getenv("ORCHESTRATOR_PORT", 9000))
 
-    print(f"Starting Fast Orchestrator Agent on http://0.0.0.0:{port}")
-    print(f"Using model: {ILMU_MODEL}")
-    print(f"Using Anthropic base URL: {os.environ['ANTHROPIC_BASE_URL']}")
+    print(f"Starting Orchestrator Agent on http://0.0.0.0:{port}")
+    print(f"Using model: {GEMINI_MODEL}")
 
     uvicorn.run(
         app,
