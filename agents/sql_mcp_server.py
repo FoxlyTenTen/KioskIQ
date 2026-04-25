@@ -35,6 +35,31 @@ def _outlet_label(location_id: str) -> str:
 
 # ─── Tool 1: Revenue & Orders ──────────────────────────────────────────────
 
+def _fetch_orders_for_date(query_date: str, location_id: str) -> list:
+    """Fetch pos_orders rows for a given date, optionally filtered by outlet."""
+    next_date = (date.fromisoformat(query_date) + timedelta(days=1)).isoformat()
+    q = (
+        sb.from_("pos_orders")
+        .select("order_id, total_amount, outlet_id, ordered_at")
+        .gte("ordered_at", f"{query_date}T00:00:00")
+        .lt("ordered_at", f"{next_date}T00:00:00")
+    )
+    if location_id != "all":
+        q = q.eq("outlet_id", location_id)
+    return q.execute().data or []
+
+
+def _latest_order_date(location_id: str) -> str | None:
+    """Return the date of the most recent order in the database."""
+    q = sb.from_("pos_orders").select("ordered_at").order("ordered_at", desc=True).limit(1)
+    if location_id != "all":
+        q = q.eq("outlet_id", location_id)
+    rows = q.execute().data or []
+    if not rows:
+        return None
+    return rows[0]["ordered_at"][:10]  # extract YYYY-MM-DD
+
+
 @mcp.tool()
 def get_revenue_summary(target_date: str = "", location_id: str = "all") -> str:
     """
@@ -43,34 +68,36 @@ def get_revenue_summary(target_date: str = "", location_id: str = "all") -> str:
     average order value, or any financial figure. Never use RAG for these questions.
 
     Args:
-        target_date: ISO date string e.g. '2025-04-25'. Defaults to today.
+        target_date: ISO date string e.g. '2025-04-25'. Defaults to today, falls back to most recent date with data.
         location_id: 'outlet-1', 'outlet-2', 'outlet-3', or 'all'. Defaults to 'all'.
     """
     today = date.today().isoformat()
     query_date = target_date.strip() if target_date.strip() else today
-    next_date = (date.fromisoformat(query_date) + timedelta(days=1)).isoformat()
 
-    q = (
-        sb.from_("pos_orders")
-        .select("order_id, total_amount, outlet_id")
-        .gte("ordered_at", f"{query_date}T00:00:00")
-        .lt("ordered_at", f"{next_date}T00:00:00")
-    )
-    if location_id != "all":
-        q = q.eq("outlet_id", location_id)
+    orders = _fetch_orders_for_date(query_date, location_id)
 
-    result = q.execute()
-    orders = result.data or []
+    # If no data for requested date, fall back to most recent date that has data
+    fallback_note = ""
+    if not orders and not target_date.strip():
+        latest = _latest_order_date(location_id)
+        if latest and latest != query_date:
+            orders = _fetch_orders_for_date(latest, location_id)
+            fallback_note = f" (most recent data — no orders recorded for today {query_date})"
+            query_date = latest
 
     if not orders:
-        return f"No orders found for {query_date}" + (f" at {_outlet_label(location_id)}" if location_id != "all" else "") + "."
+        return (
+            f"No orders found for {query_date}"
+            + (f" at {_outlet_label(location_id)}" if location_id != "all" else "")
+            + ". The database may not have POS data for this period."
+        )
 
     total_revenue = sum(float(o["total_amount"]) for o in orders)
     total_orders = len(orders)
     avg_order = total_revenue / total_orders
 
     lines = [
-        f"Revenue Summary — {query_date}" + (f" | {_outlet_label(location_id)}" if location_id != "all" else " | All Outlets"),
+        f"Revenue Summary — {query_date}{fallback_note}" + (f" | {_outlet_label(location_id)}" if location_id != "all" else " | All Outlets"),
         f"  Total orders : {total_orders}",
         f"  Total revenue: RM {total_revenue:.2f}",
         f"  Avg per order: RM {avg_order:.2f}",
@@ -191,19 +218,18 @@ def get_top_menu_items(target_date: str = "", location_id: str = "all", limit: i
     """
     today = date.today().isoformat()
     query_date = target_date.strip() if target_date.strip() else today
-    next_date = (date.fromisoformat(query_date) + timedelta(days=1)).isoformat()
 
-    # Fetch order IDs for the date/location
-    q = (
-        sb.from_("pos_orders")
-        .select("order_id, outlet_id")
-        .gte("ordered_at", f"{query_date}T00:00:00")
-        .lt("ordered_at", f"{next_date}T00:00:00")
-    )
-    if location_id != "all":
-        q = q.eq("outlet_id", location_id)
+    orders = _fetch_orders_for_date(query_date, location_id)
 
-    orders = q.execute().data or []
+    # Fall back to most recent date if no data today
+    fallback_note = ""
+    if not orders and not target_date.strip():
+        latest = _latest_order_date(location_id)
+        if latest and latest != query_date:
+            orders = _fetch_orders_for_date(latest, location_id)
+            fallback_note = f" (most recent data — no orders for today {query_date})"
+            query_date = latest
+
     order_ids = [o["order_id"] for o in orders]
 
     if not order_ids:
@@ -228,7 +254,7 @@ def get_top_menu_items(target_date: str = "", location_id: str = "all", limit: i
     ranked = sorted(totals.items(), key=lambda x: x[1]["sold"], reverse=True)[:limit]
 
     lines = [
-        f"Top Menu Items — {query_date}" + (f" | {_outlet_label(location_id)}" if location_id != "all" else " | All Outlets"),
+        f"Top Menu Items — {query_date}{fallback_note}" + (f" | {_outlet_label(location_id)}" if location_id != "all" else " | All Outlets"),
     ]
     for rank, (name, v) in enumerate(ranked, 1):
         lines.append(f"  #{rank}  {name}: {v['sold']} units  RM {v['revenue']:.2f}")

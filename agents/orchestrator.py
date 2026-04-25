@@ -123,16 +123,19 @@ A4. Budget / spending advice only
 NEVER call RAG or agents for these. ALWAYS use SQL tools only.
 
 Examples: revenue, total sales, order count, stock qty, expiry countdown, top menu items,
-outlet comparison, orders trend, average order value.
+outlet comparison, orders trend, average order value, predicted tomorrow, alerts, critical stock,
+which outlet is best, compare outlets, stock health, how many items expiring.
 
 Workflow:
 - Call the matching SQL tool(s). Run in parallel if multiple data types needed.
-- get_revenue_summary   → revenue, order count, avg order value
-- get_stock_summary     → stock quantities, critical/warning/ok counts
-- get_expiry_summary    → items expiring soon
-- get_top_menu_items    → best-selling menu items
-- get_orders_trend      → daily orders trend vs prediction
+- get_revenue_summary   → revenue, order count, avg order value (auto-falls back to latest data if today has no orders)
+- get_stock_summary     → stock quantities, critical/warning/ok counts, stock alerts
+- get_expiry_summary    → items expiring soon, expiry countdown, waste risk
+- get_top_menu_items    → best-selling menu items, top sellers (auto-falls back to latest data)
+- get_orders_trend      → daily orders trend, actual vs predicted, predicted tomorrow, is business growing
+- For outlet comparison: call get_revenue_summary + get_stock_summary + get_expiry_summary with each location_id
 - Always quote exact RM amounts. Never estimate.
+- Never say "no data" without first trying get_orders_trend to check if any historical data exists.
 
 --- CATEGORY C: KIOSK OVERVIEW ---
 Use RAG only. Never use SQL or agents.
