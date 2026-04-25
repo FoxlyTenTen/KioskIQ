@@ -1,6 +1,6 @@
 """
 Orchestrator Agent (ADK + AG-UI Protocol)
-Using Gemini (fast). GLM-5.1 path commented out below.
+Using GLM-5.1 via ILMU.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint
 from google.adk.agents import LlmAgent
 from google.adk.apps import App
-# from google.adk.models.lite_llm import LiteLlm  # GLM path — commented out
+from google.adk.models.lite_llm import LiteLlm
 from google.adk.plugins import ReflectAndRetryToolPlugin
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, SseConnectionParams
 from google.adk.tools.mcp_tool import mcp_session_manager as _msm
@@ -46,16 +46,13 @@ _msm.MCPSessionManager.close = _safe_session_close
 
 os.environ["GOOGLE_ADK_PROGRESSIVE_SSE_STREAMING"] = "1"
 
-# ── Gemini (active) ────────────────────────────────────────────────────────────
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-
-# ── GLM-5.1 via ILMU (commented out — slow) ───────────────────────────────────
-# ILMU_API_KEY = os.getenv("ILMU_API_KEY")
-# ILMU_MODEL = os.getenv("ILMU_MODEL", "ilmu-glm-5.1")
-# if not ILMU_API_KEY:
-#     raise ValueError("Missing ILMU_API_KEY in .env file")
-# os.environ["ANTHROPIC_API_KEY"] = ILMU_API_KEY
-# os.environ["ANTHROPIC_BASE_URL"] = os.getenv("ANTHROPIC_BASE_URL", "https://api.ilmu.ai/anthropic")
+# ── GLM-5.1 via ILMU ──────────────────────────────────────────────────────────
+ILMU_API_KEY = os.getenv("ILMU_API_KEY")
+ILMU_MODEL = os.getenv("ILMU_MODEL", "ilmu-glm-5.1")
+if not ILMU_API_KEY:
+    raise ValueError("Missing ILMU_API_KEY in .env file")
+os.environ["ANTHROPIC_API_KEY"] = ILMU_API_KEY
+os.environ["ANTHROPIC_BASE_URL"] = os.getenv("ANTHROPIC_BASE_URL", "https://api.ilmu.ai/anthropic")
 
 current_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -177,8 +174,7 @@ sql_toolset = McpToolset(connection_params=SseConnectionParams(url=SQL_MCP_URL))
 
 orchestrator_agent = LlmAgent(
     name="OrchestratorAgent",
-    model=GEMINI_MODEL,                       # Gemini (fast)
-    # model=LiteLlm(model=f"anthropic/{ILMU_MODEL}"),  # GLM — commented out
+    model=LiteLlm(model=f"anthropic/{ILMU_MODEL}"),
     tools=[sql_toolset, rag_toolset],
     instruction=ORCHESTRATOR_INSTRUCTION,
 )
@@ -206,7 +202,7 @@ if __name__ == "__main__":
     port = int(os.getenv("ORCHESTRATOR_PORT", 9000))
 
     print(f"Starting Orchestrator Agent on http://0.0.0.0:{port}")
-    print(f"Using model: {GEMINI_MODEL}")
+    print(f"Using model: {ILMU_MODEL}")
 
     uvicorn.run(
         app,

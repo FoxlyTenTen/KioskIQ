@@ -44,7 +44,7 @@ Ask plain-English questions — "What's expiring this week?" or "Compare all 3 o
                                │ HTTP
                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│           Orchestrator Agent  (ADK + Gemini 2.5-flash)          │
+│        Orchestrator Agent  (ADK + GLM-5.1 via ILMU — Core Brain) │
 │                       Port 9000                                 │
 │   ┌─────────────┐  ┌─────────────┐  ┌──────────────────────┐   │
 │   │  SQL MCP    │  │  RAG MCP    │  │  A2A Agent Routing   │   │
@@ -130,7 +130,7 @@ Planning Canvas — 5 slides:
 
 | Agent | Port | Model | Purpose |
 |---|---|---|---|
-| Orchestrator | 9000 | Gemini 2.5-flash | Intent routing, SQL/RAG/A2A dispatch |
+| Orchestrator | 9000 | **GLM-5.1 (ILMU)** | Intent routing, SQL/RAG/A2A dispatch — core brain |
 | RAG MCP Server | 9013 | — | Semantic search over business context |
 | SQL MCP Server | 9014 | — | Direct Supabase SQL queries |
 | Site Selection Expert | 9020 | Gemini 2.5-flash | Location scoring with live APIs |
@@ -196,7 +196,8 @@ Trigger phrases: "forecast tomorrow", "will we stock out?", "predict top sellers
 |---|---|
 | Supabase | PostgreSQL + pgvector embeddings |
 | Google Cloud Run | Inventra ML Service |
-| Gemini 2.5-flash | All agents |
+| GLM-5.1 via ILMU | Orchestrator (core brain) — intent routing & reasoning |
+| Gemini 2.5-flash | All 6 specialized A2A agents |
 | OpenAI text-embedding-3-small | RAG query embeddings |
 
 ### External APIs
