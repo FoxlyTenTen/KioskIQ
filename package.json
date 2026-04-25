@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --names \"UI,RAG,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv\" --prefix-colors \"cyan,blue,gray,magenta,yellow,red,purple,magenta,yellow,green\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\"",
+    "dev": "concurrently --names \"UI,RAG,SQL,Orch,Product,Coach,DB,Plan,Summary,Feas,Inv\" --prefix-colors \"cyan,blue,green,gray,magenta,yellow,red,purple,magenta,yellow,green\" \"npm run dev:ui\" \"npm run dev:rag\" \"npm run dev:sql\" \"npm run dev:orchestrator\" \"npm run dev:product\" \"npm run dev:coach\" \"npm run dev:database\" \"npm run dev:planner\" \"npm run dev:summary\" \"npm run dev:feasibility\" \"npm run dev:investment\"",
     "dev:ui": "next dev --turbopack",
     "dev:rag": "agents\\.venv\\Scripts\\python agents/rag_mcp_server.py",
+    "dev:sql": "agents\\.venv\\Scripts\\python agents/sql_mcp_server.py",
     "dev:orchestrator": "agents\\.venv\\Scripts\\python agents/orchestrator.py",
     "dev:product": "agents\\.venv\\Scripts\\python agents/product_agent.py",
     "dev:coach": "agents\\.venv\\Scripts\\python agents/coach_agent.py",

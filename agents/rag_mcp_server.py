@@ -1,3 +1,12 @@
+"""
+RAG MCP Server — KioskIQ
+Semantic search over embedded business documents.
+Use ONLY for: general context, narrative descriptions, trend explanations,
+AI insights, and overview summaries.
+Do NOT use for: revenue totals, order counts, stock quantities, comparisons,
+or any question that needs an exact number — use the SQL MCP server for those.
+"""
+
 import os
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -17,11 +26,19 @@ supabase_client = create_client(
 
 
 @mcp.tool()
-def search_business_data(query: str) -> str:
+def search_business_context(query: str) -> str:
     """
-    Search KioskIQ business data (inventory stock, expiry dates, POS orders, sales items)
-    using semantic vector search. Use this for any question about stock levels,
-    expiry alerts, sales trends, or order history.
+    Search for narrative context, AI insights, and general overview information
+    about the kiosk business using semantic vector search.
+
+    Use this ONLY for:
+    - General business overview ("how is the business doing?")
+    - AI-generated insights and recommendations
+    - Narrative descriptions of trends ("why is stock low?")
+    - Background context about items or categories
+
+    Do NOT use this for exact numbers, totals, counts, or comparisons.
+    For revenue, orders, stock quantities, or expiry dates — use the SQL tools instead.
     """
     res = openai_client.embeddings.create(
         model="text-embedding-3-small",
@@ -36,7 +53,7 @@ def search_business_data(query: str) -> str:
     }).execute()
 
     if not result.data:
-        return "No relevant business data found. Make sure data has been synced first (use the Sync Data button on the Demand Forecasting page)."
+        return "No relevant context found. The user may need to sync data first."
 
     lines = [
         f"[{row['source_table']}] {row['content']}"
