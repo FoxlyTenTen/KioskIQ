@@ -2,7 +2,7 @@
 
 > AI-Powered Decision Intelligence Platform built on a scalable, agent-driven architeture on SMEs.
 
-**Team SevenAteNine** | UM Hackathon 2026
+**Team SevenAteNine** | **ID: 68** | UM Hackathon 2026
 
 [![Pitch Video](https://img.shields.io/badge/Watch%20Our%20Pitch-YouTube-red?style=for-the-badge&logo=youtube)](https://youtu.be/_m998zof9Lk)
 
