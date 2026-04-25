@@ -1,6 +1,6 @@
 # Inventra
 
-> AI-Powered Decision Intelligence Platform built on a scalable, agent-driven architeture on SMEs.
+> AI-Powered Decision Intelligence Platform built on a scalable, agent-driven architeture for SMEs.
 
 **Team SevenAteNine** | **ID: 68** | UM Hackathon 2026
 
