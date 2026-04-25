@@ -168,7 +168,13 @@ Return ONLY valid JSON in this exact format — no extra text, no markdown:
     }
   ],
   "nextStep": "Select the strategy that best fits your business goals and risk appetite."
-}
+  }
+
+CRITICAL OUTPUT RULES:
+- Return exactly 3 strategies.
+- Do not omit any nested object or array shown in the schema.
+- If a value is uncertain, still fill the field with a realistic estimate rather than leaving it blank.
+- `pricingStrategy`, `marketingApproach`, and `marketOpportunity` must always be present for every strategy.
 """
 
 

@@ -14,6 +14,8 @@ import { SiteMapCard } from "@/components/SiteMapCard";
 import { DownloadReportButton } from "@/components/DownloadReportButton";
 import { ExpansionFeasibilityCard } from "@/components/ExpansionFeasibilityCard";
 import { MarketStrategyCard } from "@/components/MarketStrategyCard";
+import { RiskProfileCard } from "@/components/RiskProfileCard";
+import { StrategicRoadmapCard } from "@/components/StrategicRoadmapCard";
 
 export default function PlanningPage() {
   const {
@@ -26,6 +28,9 @@ export default function PlanningPage() {
     selectedSiteOption,
     expansionFeasibilityData,
     selectedMarketStrategy,
+    selectedRiskProfile,
+    selectedRoadmap,
+    roadmapData,
     setFinancialPlanData,
     setSummaryPlanData,
     setFeasibilityData,
@@ -69,6 +74,33 @@ export default function PlanningPage() {
         <MarketStrategyCard
           data={selectedMarketStrategy}
           locationName={selectedSiteOption?.name}
+        />
+      ),
+    });
+  }
+  if (selectedRiskProfile) {
+    slides.push({
+      id: "risk-profile",
+      label: "Risk Profile",
+      icon: "🛡️",
+      node: (
+        <RiskProfileCard
+          data={selectedRiskProfile}
+          locationName={selectedSiteOption?.name}
+        />
+      ),
+    });
+  }
+  if (selectedRoadmap) {
+    slides.push({
+      id: "roadmap",
+      label: "Expansion Roadmap",
+      icon: "🗺️",
+      node: (
+        <StrategicRoadmapCard
+          data={selectedRoadmap}
+          locationName={selectedSiteOption?.name}
+          finalRecommendation={roadmapData?.finalRecommendation ?? undefined}
         />
       ),
     });

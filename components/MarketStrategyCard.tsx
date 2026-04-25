@@ -1,10 +1,6 @@
-/**
- * MarketStrategyCard Component
- *
- * Canvas read-only card displaying the selected market strategy from the Market Researcher Agent.
- */
 import React from "react";
 import type { MarketStrategyOption } from "./types";
+import { normalizeMarketStrategyOption } from "./site-selection-utils";
 
 interface MarketStrategyCardProps {
   data: MarketStrategyOption;
@@ -21,105 +17,126 @@ const GROWTH_BG: Record<string, string> = {
 };
 
 export const MarketStrategyCard = ({ data, locationName }: MarketStrategyCardProps) => {
-  const marginPct = Math.round(data.pricingStrategy.profitMargin * 100);
-  const ltvCacRatio = data.marketingApproach.cac > 0
-    ? (data.marketingApproach.ltv / data.marketingApproach.cac).toFixed(1)
-    : "—";
+  const normalized = normalizeMarketStrategyOption(data);
+  const marginPct = Math.round(normalized.pricingStrategy.profitMargin * 100);
+  const ltvCacRatio =
+    normalized.marketingApproach.cac > 0
+      ? (normalized.marketingApproach.ltv / normalized.marketingApproach.cac).toFixed(1)
+      : "-";
 
   return (
     <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 rounded-2xl p-5 text-white shadow-xl">
-      {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">🎯</span>
+            <span className="text-2xl">Target</span>
             <div>
-              <h2 className="text-lg font-bold leading-tight">{data.name}</h2>
-              {locationName && (
-                <p className="text-indigo-300 text-xs">{locationName}</p>
-              )}
+              <h2 className="text-lg font-bold leading-tight">{normalized.name}</h2>
+              {locationName && <p className="text-indigo-300 text-xs">{locationName}</p>}
             </div>
           </div>
-          <p className="text-indigo-200 text-xs leading-relaxed max-w-xs">{data.positioning}</p>
+          <p className="text-indigo-200 text-xs leading-relaxed max-w-xs">
+            {normalized.positioning}
+          </p>
         </div>
         <div className="text-right shrink-0 ml-3">
-          <div className={`text-3xl font-black ${SCORE_COLOR(data.marketOpportunity.opportunityScore)}`}>
-            {data.marketOpportunity.opportunityScore}
+          <div
+            className={`text-3xl font-black ${SCORE_COLOR(
+              normalized.marketOpportunity.opportunityScore
+            )}`}
+          >
+            {normalized.marketOpportunity.opportunityScore}
           </div>
           <div className="text-indigo-400 text-[10px] uppercase tracking-wide">opp. score</div>
           <span
             className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-              GROWTH_BG[data.marketOpportunity.growthPotential] ?? "bg-gray-100 text-gray-600 border-gray-200"
+              GROWTH_BG[normalized.marketOpportunity.growthPotential] ??
+              "bg-gray-100 text-gray-600 border-gray-200"
             }`}
           >
-            {data.marketOpportunity.growthPotential} Growth
+            {normalized.marketOpportunity.growthPotential} Growth
           </span>
         </div>
       </div>
 
-      {/* KPI tiles */}
       <div className="grid grid-cols-4 gap-2 mb-4">
-        <KpiTile label="Price Point" value={data.pricingStrategy.pricePoint} />
-        <KpiTile label="Avg Order" value={`RM ${data.pricingStrategy.aov}`} />
+        <KpiTile label="Price Point" value={normalized.pricingStrategy.pricePoint} />
+        <KpiTile label="Avg Order" value={`RM ${normalized.pricingStrategy.aov}`} />
         <KpiTile label="Margin" value={`${marginPct}%`} />
-        <KpiTile label="LTV:CAC" value={`${ltvCacRatio}×`} />
+        <KpiTile label="LTV:CAC" value={`${ltvCacRatio}x`} />
       </div>
 
-      {/* Marketing & Customer */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-white/10 rounded-xl p-3">
-          <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">Marketing</p>
+          <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">
+            Marketing
+          </p>
           <div className="space-y-1">
-            <MetricRow label="CAC" value={`RM ${data.marketingApproach.cac}`} />
-            <MetricRow label="LTV" value={`RM ${data.marketingApproach.ltv}`} />
-            <MetricRow label="Monthly Budget" value={`RM ${data.marketingApproach.monthlyBudget.toLocaleString()}`} />
+            <MetricRow label="CAC" value={`RM ${normalized.marketingApproach.cac}`} />
+            <MetricRow label="LTV" value={`RM ${normalized.marketingApproach.ltv}`} />
+            <MetricRow
+              label="Monthly Budget"
+              value={`RM ${normalized.marketingApproach.monthlyBudget.toLocaleString()}`}
+            />
           </div>
         </div>
         <div className="bg-white/10 rounded-xl p-3">
-          <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">Timeline</p>
+          <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">
+            Timeline
+          </p>
           <div className="space-y-1">
-            <MetricRow label="To Dominance" value={data.marketOpportunity.timelineToDominance} />
-            <MetricRow label="Growth Rate" value={data.marketAnalysis.growthRate} />
+            <MetricRow
+              label="To Dominance"
+              value={normalized.marketOpportunity.timelineToDominance}
+            />
+            <MetricRow label="Growth Rate" value={normalized.marketAnalysis.growthRate} />
           </div>
         </div>
       </div>
 
-      {/* Target customer */}
       <div className="bg-white/10 rounded-xl p-3 mb-4">
-        <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-1">Target Customer</p>
-        <p className="text-xs text-indigo-100 leading-relaxed">{data.customerProfile}</p>
+        <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-1">
+          Target Customer
+        </p>
+        <p className="text-xs text-indigo-100 leading-relaxed">
+          {normalized.customerProfile}
+        </p>
       </div>
 
-      {/* Growth tactics */}
       <div className="mb-4">
-        <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">Growth Tactics</p>
+        <p className="text-[10px] text-indigo-300 uppercase tracking-wide font-semibold mb-2">
+          Growth Tactics
+        </p>
         <div className="space-y-1">
-          {data.growthTactics.map((t, i) => (
+          {normalized.growthTactics.map((tactic, i) => (
             <div key={i} className="flex items-start gap-2 text-xs text-indigo-100">
               <span className="text-indigo-400 mt-0.5 shrink-0">→</span>
-              {t}
+              {tactic}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Pros / Cons */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <p className="text-[10px] text-emerald-400 uppercase tracking-wide font-semibold mb-1">Pros</p>
-          {data.pros.map((p, i) => (
+          <p className="text-[10px] text-emerald-400 uppercase tracking-wide font-semibold mb-1">
+            Pros
+          </p>
+          {normalized.pros.map((pro, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs text-indigo-100 mb-0.5">
               <span className="text-emerald-400 shrink-0">✓</span>
-              {p}
+              {pro}
             </div>
           ))}
         </div>
         <div>
-          <p className="text-[10px] text-red-400 uppercase tracking-wide font-semibold mb-1">Cons</p>
-          {data.cons.map((c, i) => (
+          <p className="text-[10px] text-red-400 uppercase tracking-wide font-semibold mb-1">
+            Cons
+          </p>
+          {normalized.cons.map((con, i) => (
             <div key={i} className="flex items-start gap-1.5 text-xs text-indigo-100 mb-0.5">
               <span className="text-red-400 shrink-0">×</span>
-              {c}
+              {con}
             </div>
           ))}
         </div>

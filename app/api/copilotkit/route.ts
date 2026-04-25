@@ -32,6 +32,8 @@ export async function POST(request: NextRequest) {
   const siteSelectionAgentUrl = process.env.SITE_SELECTION_AGENT_URL || "http://localhost:9020";
   const expansionFeasibilityAgentUrl = process.env.EXPANSION_FEASIBILITY_AGENT_URL || "http://localhost:9021";
   const marketResearcherAgentUrl = process.env.MARKET_RESEARCHER_AGENT_URL || "http://localhost:9022";
+  const riskManagerAgentUrl = process.env.RISK_MANAGER_AGENT_URL || "http://localhost:9023";
+  const strategicPlannerAgentUrl = process.env.STRATEGIC_PLANNER_AGENT_URL || "http://localhost:9024";
 
   // STEP 2: Define orchestrator URL (speaks AG-UI Protocol)
   const orchestratorUrl = process.env.ORCHESTRATOR_URL || "http://localhost:9000";
@@ -57,6 +59,8 @@ export async function POST(request: NextRequest) {
       siteSelectionAgentUrl,
       expansionFeasibilityAgentUrl,
       marketResearcherAgentUrl,
+      riskManagerAgentUrl,
+      strategicPlannerAgentUrl,
     ],
 
     orchestrationAgent,
@@ -75,6 +79,8 @@ export async function POST(request: NextRequest) {
       - Site Selection Expert Agent (ADK): Analyses Malaysian mall/commercial locations for F&B kiosk expansion. Returns 3 candidate sites with foot traffic, rent, competition scores, pros and cons.
       - Expansion Feasibility Agent (ADK): Projects financial feasibility for a selected F&B kiosk expansion location. Returns monthly revenue, profit, break-even timeline, ROI, and risk classification. Use the exact name "Expansion Feasibility Agent" when calling this agent.
       - Market Researcher (ADK): Analyses competitor market segments and demographics for a chosen location. Returns 3 market strategy options (Premium/Value/Niche) for the user to select. Use the exact name "Market Researcher" when calling this agent.
+      - Risk Manager (ADK): Generates 3 risk management profiles (Conservative/Balanced/Aggressive) based on all prior selections. Returns risk assessments, mitigation strategies, contingency plans, and financial buffers. Use the exact name "Risk Manager" when calling this agent.
+      - Strategic Planner (ADK): Synthesises all prior selections into 3 expansion roadmaps. Returns phased roadmaps with timelines, investment schedules, milestones, and a final recommendation. Use the exact name "Strategic Planner" when calling this agent.
 
       WORKFLOW STRATEGY (SEQUENTIAL):
 
@@ -104,6 +110,15 @@ export async function POST(request: NextRequest) {
          - Step 8: Call Market Researcher with the selected location name, coordinates, and targetArea.
          - Step 9: Call 'display_market_strategy_options' with the full agent JSON response to show the HITL strategy selection card.
          - Step 10: Wait for user to select a strategy (respond() will fire with the selected strategy).
+         - Step 11: Confirm the chosen strategy.
+         - Step 12: Call Risk Manager with all prior selections.
+         - Step 13: Call 'display_risk_profile_options' with the full agent JSON response.
+         - Step 14: Wait for user to select a risk profile (respond() fires).
+         - Step 15: Confirm the chosen risk profile.
+         - Step 16: Call Strategic Planner with all prior selections.
+         - Step 17: Call 'display_strategic_roadmap_options' with the full agent JSON response.
+         - Step 18: Wait for user to select a roadmap (respond() fires).
+         - Step 19: Congratulate the user with a brief expansion plan summary.
          - DO NOT trigger the financial planning flow for this.
 
       3. **Ad-Hoc Product Shopping / Quick Advice**:

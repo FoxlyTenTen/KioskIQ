@@ -156,6 +156,14 @@ Workflow:
 9. Call display_market_strategy_options with the full agent JSON response to show the HITL strategy selection card
 10. Wait for the user to select a strategy (respond() will fire with the selected strategy)
 11. Confirm the chosen strategy to the user
+12. Call Risk Manager with all prior selections (location name, financial metrics from expansion feasibility, selected strategy name)
+13. Call display_risk_profile_options with the full agent JSON response to show the HITL risk profile selection card
+14. Wait for the user to select a risk profile (respond() will fire)
+15. Confirm the chosen risk profile to the user
+16. Call Strategic Planner with ALL prior selections (location, financial summary, market strategy name, risk profile name)
+17. Call display_strategic_roadmap_options with the full agent JSON response to show the HITL roadmap selection card
+18. Wait for the user to select a roadmap (respond() will fire)
+19. Congratulate the user and present a brief summary of their complete expansion plan (location, strategy, risk profile, roadmap timeline)
 
 NEVER use RAG or SQL tools for expansion requests.
 

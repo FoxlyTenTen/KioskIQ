@@ -1,11 +1,9 @@
-/**
- * MarketStrategyOptionsCard Component
- *
- * HITL card showing 3 market positioning strategy options from the Market Researcher Agent.
- * Mirrors the SiteSelectionCard pattern — user expands an option and clicks to select.
- */
 import React, { useState } from "react";
 import type { MarketStrategyData, MarketStrategyOption } from "./types";
+import {
+  normalizeMarketStrategyData,
+  normalizeMarketStrategyOption,
+} from "./site-selection-utils";
 
 interface MarketStrategyOptionsCardProps {
   data: MarketStrategyData;
@@ -31,21 +29,26 @@ const GROWTH_COLOR: Record<string, string> = {
   Low: "text-red-500",
 };
 
-export const MarketStrategyOptionsCard = ({ data, respond }: MarketStrategyOptionsCardProps) => {
+export const MarketStrategyOptionsCard = ({
+  data,
+  respond,
+}: MarketStrategyOptionsCardProps) => {
+  const normalizedData = normalizeMarketStrategyData(data);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selected, setSelected] = useState<MarketStrategyOption | null>(null);
 
-  if (!data?.strategies?.length) return null;
+  if (!normalizedData.strategies.length) return null;
 
   const handleSelect = (opt: MarketStrategyOption) => {
-    setSelected(opt);
+    const normalizedOption = normalizeMarketStrategyOption(opt);
+    setSelected(normalizedOption);
     respond?.({
-      selectedStrategyId: opt.strategyId,
-      selectedName: opt.name,
-      positioning: opt.positioning,
-      pricingStrategy: opt.pricingStrategy,
-      marketingApproach: opt.marketingApproach,
-      marketOpportunity: opt.marketOpportunity,
+      selectedStrategyId: normalizedOption.strategyId,
+      selectedName: normalizedOption.name,
+      positioning: normalizedOption.positioning,
+      pricingStrategy: normalizedOption.pricingStrategy,
+      marketingApproach: normalizedOption.marketingApproach,
+      marketOpportunity: normalizedOption.marketOpportunity,
     });
   };
 
@@ -77,18 +80,17 @@ export const MarketStrategyOptionsCard = ({ data, respond }: MarketStrategyOptio
   return (
     <div className="bg-white/90 backdrop-blur-md rounded-xl p-4 my-3 border-2 border-indigo-200 shadow-lg animate-in fade-in slide-in-from-bottom-5">
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">🎯</span>
+        <span className="text-xl">Target</span>
         <div>
           <h3 className="text-base font-bold text-indigo-900">
-            Market Strategy — {data.locationName}
+            Market Strategy - {normalizedData.locationName}
           </h3>
-          <p className="text-xs text-indigo-500">{data.userPrompt}</p>
+          <p className="text-xs text-indigo-500">{normalizedData.userPrompt}</p>
         </div>
       </div>
 
       <div className="space-y-3">
-        {data.strategies.map((opt, idx) => {
-          if (!opt?.strategyId || !opt?.pricingStrategy || !opt?.marketingApproach || !opt?.marketOpportunity) return null;
+        {normalizedData.strategies.map((opt, idx) => {
           const isOpen = expanded === opt.strategyId;
           return (
             <div
@@ -145,34 +147,48 @@ export const MarketStrategyOptionsCard = ({ data, respond }: MarketStrategyOptio
               {isOpen && (
                 <div className="px-3 pb-3 space-y-3">
                   <div className="bg-gray-50 rounded-lg p-2.5 space-y-1.5">
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Target Customer</p>
+                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">
+                      Target Customer
+                    </p>
                     <p className="text-xs text-gray-700">{opt.customerProfile}</p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-center">
                       <p className="text-[9px] text-gray-400 uppercase tracking-wide">Growth</p>
-                      <p className={`text-xs font-bold ${GROWTH_COLOR[opt.marketOpportunity.growthPotential] ?? "text-gray-600"}`}>
+                      <p
+                        className={`text-xs font-bold ${
+                          GROWTH_COLOR[opt.marketOpportunity.growthPotential] ?? "text-gray-600"
+                        }`}
+                      >
                         {opt.marketOpportunity.growthPotential}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-[9px] text-gray-400 uppercase tracking-wide">Timeline</p>
-                      <p className="text-xs font-bold text-gray-700">{opt.marketOpportunity.timelineToDominance}</p>
+                      <p className="text-xs font-bold text-gray-700">
+                        {opt.marketOpportunity.timelineToDominance}
+                      </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[9px] text-gray-400 uppercase tracking-wide">Mktg Budget</p>
-                      <p className="text-xs font-bold text-gray-700">RM {opt.marketingApproach.monthlyBudget.toLocaleString()}</p>
+                      <p className="text-[9px] text-gray-400 uppercase tracking-wide">
+                        Mktg Budget
+                      </p>
+                      <p className="text-xs font-bold text-gray-700">
+                        RM {opt.marketingApproach.monthlyBudget.toLocaleString()}
+                      </p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wide mb-1">Growth Tactics</p>
+                    <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wide mb-1">
+                      Growth Tactics
+                    </p>
                     <ul className="space-y-0.5">
-                      {opt.growthTactics.map((t, i) => (
+                      {opt.growthTactics.map((tactic, i) => (
                         <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
                           <span className="text-indigo-400 mt-0.5 flex-shrink-0">→</span>
-                          {t}
+                          {tactic}
                         </li>
                       ))}
                     </ul>
@@ -180,23 +196,27 @@ export const MarketStrategyOptionsCard = ({ data, respond }: MarketStrategyOptio
 
                   <div className="grid grid-cols-2 gap-x-3">
                     <div>
-                      <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-1">Pros</p>
+                      <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-1">
+                        Pros
+                      </p>
                       <ul className="space-y-0.5">
-                        {opt.pros.map((p, i) => (
+                        {opt.pros.map((pro, i) => (
                           <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
                             <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span>
-                            {p}
+                            {pro}
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wide mb-1">Cons</p>
+                      <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wide mb-1">
+                        Cons
+                      </p>
                       <ul className="space-y-0.5">
-                        {opt.cons.map((c, i) => (
+                        {opt.cons.map((con, i) => (
                           <li key={i} className="flex items-start gap-1.5 text-xs text-gray-700">
                             <span className="text-red-400 mt-0.5 flex-shrink-0">×</span>
-                            {c}
+                            {con}
                           </li>
                         ))}
                       </ul>
@@ -216,7 +236,7 @@ export const MarketStrategyOptionsCard = ({ data, respond }: MarketStrategyOptio
         })}
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-3 text-center">{data.nextStep}</p>
+      <p className="text-[10px] text-gray-400 mt-3 text-center">{normalizedData.nextStep}</p>
     </div>
   );
 };

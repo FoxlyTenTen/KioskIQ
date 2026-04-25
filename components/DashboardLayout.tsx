@@ -74,6 +74,9 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     setSelectedSiteOption,
     setExpansionFeasibilityData,
     setSelectedMarketStrategy,
+    setSelectedRiskProfile,
+    setSelectedRoadmap,
+    setRoadmapData,
   } = useFinancialData();
 
   useEffect(() => {
@@ -222,6 +225,9 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
             onSelectedSiteUpdate={setSelectedSiteOption}
             onExpansionFeasibilityUpdate={setExpansionFeasibilityData}
             onSelectedMarketStrategyUpdate={setSelectedMarketStrategy}
+            onSelectedRiskProfileUpdate={setSelectedRiskProfile}
+            onSelectedRoadmapUpdate={setSelectedRoadmap}
+            onRoadmapDataUpdate={setRoadmapData}
           />
         </div>
       </div>

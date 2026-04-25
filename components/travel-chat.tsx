@@ -19,6 +19,10 @@ import type {
   SiteSelectionData,
   MarketStrategyData,
   MarketStrategyOption,
+  RiskProfileData,
+  RiskProfileOption,
+  RoadmapData,
+  RoadmapOption,
 } from "./types";
 
 import { MessageToA2A } from "./a2a/MessageToA2A";
@@ -33,9 +37,18 @@ import { InvestmentCard } from "./InvestmentCard";
 import { SiteSelectionCard } from "./SiteSelectionCard";
 import { ExpansionFeasibilityCard } from "./ExpansionFeasibilityCard";
 import type { ExpansionFeasibilityData } from "./ExpansionFeasibilityCard";
-import { normalizeSiteSelectionData } from "./site-selection-utils";
+import {
+  normalizeMarketStrategyData,
+  normalizeRiskProfileData,
+  normalizeRoadmapData,
+  normalizeSiteSelectionData,
+} from "./site-selection-utils";
 import { MarketStrategyOptionsCard } from "./MarketStrategyOptionsCard";
 import { MarketStrategyCard } from "./MarketStrategyCard";
+import { RiskProfileOptionsCard } from "./RiskProfileOptionsCard";
+import { RiskProfileCard } from "./RiskProfileCard";
+import { RoadmapOptionsCard } from "./RoadmapOptionsCard";
+import { StrategicRoadmapCard } from "./StrategicRoadmapCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -50,6 +63,9 @@ const ChatInner = (props: TravelChatProps) => {
     onSelectedSiteUpdate,
     onExpansionFeasibilityUpdate,
     onSelectedMarketStrategyUpdate,
+    onSelectedRiskProfileUpdate,
+    onSelectedRoadmapUpdate,
+    onRoadmapDataUpdate,
   } = props;
 
   // ── Shared agent state (co-agent sync) ──────────────────────────────────────
@@ -312,7 +328,7 @@ const ChatInner = (props: TravelChatProps) => {
       { name: "nextStep",      type: "string",   required: false },
     ],
     renderAndWaitForResponse: ({ args, respond }) => {
-      const data = args as unknown as MarketStrategyData;
+      const data = normalizeMarketStrategyData(args);
       if (!data?.strategies?.length || !Array.isArray(data.strategies)) return <></>;
       const wrappedRespond = respond
         ? (selection: object) => {
@@ -324,6 +340,109 @@ const ChatInner = (props: TravelChatProps) => {
           }
         : undefined;
       return <MarketStrategyOptionsCard data={data} respond={wrappedRespond} />;
+    },
+  });
+
+  // ── HITL: Risk profile selection card ───────────────────────────────────────
+  useCopilotAction({
+    name: "display_risk_profile_options",
+    description: "Display 3 risk management profile options for the user to choose from",
+    parameters: [
+      { name: "agentName",         type: "string",   required: false },
+      { name: "actionType",        type: "string",   required: false },
+      { name: "selectedLocation",  type: "string",   required: false },
+      { name: "selectedFinancial", type: "string",   required: false },
+      { name: "selectedStrategy",  type: "string",   required: false },
+      { name: "userPrompt",        type: "string",   required: false },
+      { name: "riskProfiles",      type: "object[]", required: false },
+      { name: "nextStep",          type: "string",   required: false },
+    ],
+    renderAndWaitForResponse: ({ args, respond }) => {
+      const data = normalizeRiskProfileData(args);
+      if (!data?.riskProfiles?.length || !Array.isArray(data.riskProfiles)) return <></>;
+      const wrappedRespond = respond
+        ? (selection: object) => {
+            const opt = data.riskProfiles.find(
+              (p) => p.profileId === (selection as any).selectedProfileId
+            );
+            if (opt) onSelectedRiskProfileUpdate?.(opt);
+            respond(selection);
+          }
+        : undefined;
+      return <RiskProfileOptionsCard data={data} respond={wrappedRespond} />;
+    },
+  });
+
+  // ── Display: Selected risk profile on canvas ─────────────────────────────────
+  useCopilotAction({
+    name: "display_risk_profile",
+    description: "Display the selected risk profile on the canvas",
+    available: "frontend",
+    parameters: [
+      { name: "data",         type: "object", description: "Selected risk profile data" },
+      { name: "locationName", type: "string", required: false },
+    ],
+    render: ({ args }) => {
+      if (!args.data) return <></>;
+      return (
+        <RiskProfileCard
+          data={args.data as RiskProfileOption}
+          locationName={args.locationName as string | undefined}
+        />
+      );
+    },
+  });
+
+  // ── HITL: Strategic roadmap selection card ───────────────────────────────────
+  useCopilotAction({
+    name: "display_strategic_roadmap_options",
+    description: "Display 3 expansion roadmap options for the user to choose from",
+    parameters: [
+      { name: "agentName",          type: "string",   required: false },
+      { name: "actionType",         type: "string",   required: false },
+      { name: "selectedLocation",   type: "string",   required: false },
+      { name: "selectedFinancial",  type: "string",   required: false },
+      { name: "selectedStrategy",   type: "string",   required: false },
+      { name: "selectedRiskProfile",type: "string",   required: false },
+      { name: "userPrompt",         type: "string",   required: false },
+      { name: "roadmaps",           type: "object[]", required: false },
+      { name: "finalRecommendation",type: "object",   required: false },
+      { name: "nextStep",           type: "string",   required: false },
+    ],
+    renderAndWaitForResponse: ({ args, respond }) => {
+      const data = normalizeRoadmapData(args);
+      if (!data?.roadmaps?.length || !Array.isArray(data.roadmaps)) return <></>;
+      const wrappedRespond = respond
+        ? (selection: object) => {
+            const opt = data.roadmaps.find(
+              (r) => r.roadmapId === (selection as any).selectedRoadmapId
+            );
+            onRoadmapDataUpdate?.(data);
+            if (opt) onSelectedRoadmapUpdate?.(opt);
+            respond(selection);
+          }
+        : undefined;
+      return <RoadmapOptionsCard data={data} respond={wrappedRespond} />;
+    },
+  });
+
+  // ── Display: Selected roadmap on canvas ──────────────────────────────────────
+  useCopilotAction({
+    name: "display_strategic_roadmap",
+    description: "Display the selected strategic roadmap on the canvas",
+    available: "frontend",
+    parameters: [
+      { name: "data",         type: "object", description: "Selected roadmap data" },
+      { name: "locationName", type: "string", required: false },
+    ],
+    render: ({ args }) => {
+      if (!args.data) return <></>;
+      return (
+        <StrategicRoadmapCard
+          data={args.data as RoadmapOption}
+          locationName={args.locationName as string | undefined}
+        />
+      );
     },
   });
 

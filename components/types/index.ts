@@ -235,6 +235,92 @@ export interface MarketStrategyData {
   nextStep: string;
 }
 
+// Risk Profile Data
+export interface RiskItem {
+  risk: string;
+  severity: "HIGH" | "MEDIUM" | "LOW";
+  likelihood: "HIGH" | "MEDIUM" | "LOW";
+  impact: number;
+  mitigation: string;
+  contingency: string;
+}
+
+export interface RiskProfileOption {
+  profileId: string;
+  name: string;
+  philosophy: string;
+  riskTolerance: string;
+  contingencyBudget: number;
+  riskAssessment: { risks: RiskItem[] };
+  mitigationStrategies: string[];
+  contingencyPlans: { trigger: string; action: string }[];
+  monitoringApproach: { keyMetrics: string[]; checkFrequency: string; decisionPoints: string[] };
+  financialBuffers: { operatingReserve: number; marketingBuffer: number; staffingBuffer: number; contingencyFund: number; totalContingency: number };
+  pros: string[];
+  cons: string[];
+}
+
+export interface RiskProfileData {
+  agentName: string;
+  actionType: string;
+  selectedLocation: string;
+  selectedFinancial: string;
+  selectedStrategy: string;
+  userPrompt: string;
+  riskProfiles: RiskProfileOption[];
+  nextStep: string;
+}
+
+// Roadmap Data
+export interface RoadmapPhase {
+  name: string;
+  months?: string;
+  investment?: number;
+  revenueTarget?: string;
+  numLocations?: number;
+  timeline?: string;
+  investmentPerLocation?: number;
+  totalPhase2Investment?: number;
+  expansionPace?: string;
+  revenuePerStore?: string;
+  successCriteria?: string[];
+  decisionPoint?: string;
+  targetNetworkSize?: number;
+  expectedYear3Revenue?: number;
+  expectedYear3Profit?: number;
+}
+
+export interface RoadmapOption {
+  roadmapId: string;
+  name: string;
+  philosophy: string;
+  totalTimeline: string;
+  totalInvestment: number;
+  expectedYear3Revenue: number;
+  expectedYear3Profit: number;
+  phases: { phase1: RoadmapPhase; phase2: RoadmapPhase; phase3: RoadmapPhase };
+  timelineVisualization: string;
+  investmentSchedule: { phase1: number; phase2: number; phase3: number; contingency: number; total: number; fundingStrategy: string };
+  milestones: string[];
+  successMetrics: Record<string, string>;
+  pros: string[];
+  cons: string[];
+  comparison: { growthSpeed: string; capitalRequired: string; riskLevel: string; managementComplexity: string; bestFor: string };
+}
+
+export interface RoadmapData {
+  agentName: string;
+  actionType: string;
+  selectedLocation: string;
+  selectedFinancial: string;
+  selectedStrategy: string;
+  selectedRiskProfile: string;
+  userPrompt: string;
+  roadmaps: RoadmapOption[];
+  finalRecommendation: { recommendedRoadmap: string; reasoning: string; projectedOutcome: string };
+  nextStep: string;
+}
+
 // Investment Data
 export interface InvestmentStrategyData {
   strategyName: string;
@@ -267,6 +353,9 @@ export interface TravelChatProps {
   onSelectedSiteUpdate?: (data: SiteSelectionOption) => void;
   onExpansionFeasibilityUpdate?: (data: import("../ExpansionFeasibilityCard").ExpansionFeasibilityData) => void;
   onSelectedMarketStrategyUpdate?: (data: MarketStrategyOption) => void;
+  onSelectedRiskProfileUpdate?: (data: RiskProfileOption) => void;
+  onSelectedRoadmapUpdate?: (data: RoadmapOption) => void;
+  onRoadmapDataUpdate?: (data: RoadmapData) => void;
 }
 
 export interface AgentStyle {
