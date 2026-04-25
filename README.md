@@ -1,6 +1,6 @@
 # Inventra
 
-> AI-Powered F&B Kiosk Operations Intelligence for Malaysian Mall Operators
+> AI-Powered Decision Intelligence Platform built on a scalable, agent-driven architeture on SMEs.
 
 **Team SevenAteNine** | UM Hackathon 2026
 
