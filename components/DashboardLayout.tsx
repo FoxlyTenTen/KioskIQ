@@ -15,6 +15,7 @@ import {
   Bell,
   Menu,
   X,
+  RefreshCw,
   LogOut,
   Calculator,
   Moon,
@@ -41,6 +42,20 @@ const menuItems = [
 function LayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncDone, setSyncDone] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncDone(false);
+    try {
+      await fetch('/api/rag/embed', { method: 'POST' });
+      setSyncDone(true);
+      setTimeout(() => setSyncDone(false), 3000);
+    } finally {
+      setSyncing(false);
+    }
+  };
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -144,6 +159,18 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={syncing}
+              title="Sync latest data to vector DB for RAG"
+              className="text-xs hidden sm:flex items-center gap-1.5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : syncDone ? '✓ Synced' : 'Sync to AI'}
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"

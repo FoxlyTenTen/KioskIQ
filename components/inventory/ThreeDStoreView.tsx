@@ -6,6 +6,7 @@ import { OrthographicCamera, ContactShadows, Html, Environment } from '@react-th
 import * as THREE from 'three';
 import type { KioskData } from './types';
 import { calculateAlertStatus, getWorstStatus, getStatusHexColor } from './inventoryUtils';
+import { ItemShape3D } from './ItemShape3D';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SPEED = 0.07;
@@ -25,18 +26,6 @@ const MOVE_DIRS: Record<string, [number, number]> = {
   arrowright: [ ISO, -ISO],
 };
 
-const CAT_COLORS: Record<string, number[]> = {
-  Protein:   [0xef4444, 0xf97316, 0xb91c1c],
-  Grain:     [0xf59e0b, 0xd97706, 0xfbbf24],
-  Sauce:     [0xdc2626, 0x991b1b, 0xef4444],
-  Vegetable: [0x16a34a, 0x4ade80, 0x86efac],
-  Beverage:  [0x2563eb, 0x60a5fa, 0x3b82f6],
-  Dairy:     [0xfde68a, 0xfcd34d, 0xfef3c7],
-  Frozen:    [0x7dd3fc, 0x0ea5e9, 0x38bdf8],
-  Bakery:    [0xd97706, 0xb45309, 0xfbbf24],
-  Seafood:   [0x0ea5e9, 0x0284c7, 0x38bdf8],
-  default:   [0x9ca3af, 0x6b7280, 0xd1d5db],
-};
 
 const STATUS_DOT: Record<string, string> = {
   normal: '#22c55e',
@@ -115,32 +104,6 @@ function StoreEnvironment() {
   );
 }
 
-// ─── Products on shelves ──────────────────────────────────────────────────────
-function ShelfProducts({ category, count }: { category: string; count: number }) {
-  const colors = CAT_COLORS[category] ?? CAT_COLORS.default;
-  const slots: [number, number][] = [
-    [-0.65, 0], [-0.35, 0], [-0.05, 0], [0.25, 0], [0.55, 0],
-    [-0.65, -0.2], [-0.25, -0.2], [0.15, -0.2], [0.55, -0.2],
-  ];
-
-  return (
-    <group>
-      {slots.slice(0, Math.min(count * 2 + 1, slots.length)).map(([x, z], i) => {
-        const isCan = i % 3 === 1;
-        const color = colors[i % colors.length];
-        const h = isCan ? 0.22 : 0.18 + (i % 2) * 0.07;
-        return (
-          <mesh key={i} position={[x, h / 2, z]} castShadow>
-            {isCan
-              ? <cylinderGeometry args={[0.07, 0.07, h, 8]} />
-              : <boxGeometry args={[0.14 + (i % 2) * 0.05, h, 0.13]} />}
-            <meshStandardMaterial color={color} roughness={0.5} metalness={0.05} />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
 
 // ─── Rack label (HTML overlay via drei Html) ──────────────────────────────────
 function RackLabel({ rack, items, isNearby }: { rack: any; items: any[]; isNearby: boolean }) {
@@ -217,7 +180,6 @@ function RackLabel({ rack, items, isNearby }: { rack: any; items: any[]; isNearb
 function FridgeUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNearby: boolean }) {
   const worst = getWorstStatus(items.map(calculateAlertStatus));
   const glowHex = getStatusHexColor(worst);
-  const mainCat = items[0]?.category ?? 'default';
 
   return (
     <group position={[rack.location_3d.x, 0, rack.location_3d.z]}>
@@ -251,12 +213,16 @@ function FridgeUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNear
           <meshStandardMaterial color="#90a4b4" metalness={0.85} roughness={0.15} />
         </mesh>
       ))}
-      {/* Products visible through glass (representative) */}
+      {/* Products visible through glass */}
       <group position={[0, 0.7, 0.15]}>
-        <ShelfProducts category={mainCat} count={items.length} />
+        {items.slice(0, 5).map((item, i) => (
+          <ItemShape3D key={`f0-${item.item_id ?? i}`} itemName={item.item_name} index={i} />
+        ))}
       </group>
       <group position={[0, 1.4, 0.15]}>
-        <ShelfProducts category={mainCat} count={items.length} />
+        {items.slice(5).map((item, i) => (
+          <ItemShape3D key={`f1-${item.item_id ?? i}`} itemName={item.item_name} index={i} />
+        ))}
       </group>
       {/* Status LED strip */}
       <mesh position={[0, 0.04, 0.49]}>
@@ -285,7 +251,6 @@ function FridgeUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNear
 function ShelfUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNearby: boolean }) {
   const worst = getWorstStatus(items.map(calculateAlertStatus));
   const glowHex = getStatusHexColor(worst);
-  const mainCat = items[0]?.category ?? 'default';
   const shelfBoards = [0.52, 1.08, 1.64];
 
   return (
@@ -310,7 +275,9 @@ function ShelfUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNearb
             <meshStandardMaterial color="#c4996a" roughness={0.75} metalness={0.02} />
           </mesh>
           <group position={[0, y + 0.04, 0]}>
-            <ShelfProducts category={mainCat} count={Math.ceil(items.length / 3)} />
+            {items.slice(si * 3, si * 3 + 3).map((item, i) => (
+              <ItemShape3D key={`s${si}-${item.item_id ?? i}`} itemName={item.item_name} index={i} />
+            ))}
           </group>
           {/* Shelf edge price rail */}
           <mesh position={[0, y + 0.04, 0.46]}>
@@ -340,7 +307,6 @@ function ShelfUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNearb
 function FreezerUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNearby: boolean }) {
   const worst = getWorstStatus(items.map(calculateAlertStatus));
   const glowHex = getStatusHexColor(worst);
-  const mainCat = items[0]?.category ?? 'Frozen';
 
   return (
     <group position={[rack.location_3d.x, 0, rack.location_3d.z]}>
@@ -365,8 +331,10 @@ function FreezerUnit({ rack, items, isNearby }: { rack: any; items: any[]; isNea
         <meshStandardMaterial color="#a8d8f0" emissive="#90c8e8" emissiveIntensity={0.12} transparent opacity={0.28} />
       </mesh>
       {/* Products inside */}
-      <group position={[0, 0.8, 0]} rotation={[0, 0, 0]}>
-        <ShelfProducts category={mainCat} count={items.length} />
+      <group position={[0, 0.8, 0]}>
+        {items.map((item, i) => (
+          <ItemShape3D key={`fz-${item.item_id ?? i}`} itemName={item.item_name} index={i} />
+        ))}
       </group>
       {/* Side handles */}
       {([-1.13, 1.13] as number[]).map((x, i) => (

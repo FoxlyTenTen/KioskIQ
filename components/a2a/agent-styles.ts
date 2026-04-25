@@ -78,7 +78,8 @@ export function getAgentStyle(agentName: string): AgentStyle {
  * @param maxLength - Maximum length before truncation (default: 50)
  * @returns Truncated text with "..." if needed
  */
-export function truncateTask(text: string, maxLength: number = 50): string {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
+export function truncateTask(text: string): string {
+  const colonIndex = text.indexOf(":");
+  if (colonIndex !== -1) return text.substring(0, colonIndex);
+  return text;
 }

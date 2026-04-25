@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from 'react';
+import useSWR from 'swr';
 import { ShoppingCart, TrendingUp, AlertTriangle, Wallet, BarChart3 } from 'lucide-react';
 import { KPICard } from '@/components/KPICard';
 import { AIInsightPanel } from '@/components/AIInsightPanel';
+import { LocationSelector } from '@/components/inventory/LocationSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,310 +19,247 @@ import {
   Legend,
 } from 'recharts';
 
-const ordersData = [
-  { date: 'Apr 15', actual: 120, predicted: 125 },
-  { date: 'Apr 16', actual: 145, predicted: 142 },
-  { date: 'Apr 17', actual: 168, predicted: 165 },
-  { date: 'Apr 18', actual: 190, predicted: 188 },
-  { date: 'Apr 19', actual: 210, predicted: 205 },
-  { date: 'Apr 20', actual: 198, predicted: 195 },
-  { date: 'Apr 21', actual: 215, predicted: null },
-  { date: 'Apr 22', actual: null, predicted: 230 },
-  { date: 'Apr 23', actual: null, predicted: 245 },
-];
+interface DashboardData {
+  kpis: {
+    todaysOrders: number;
+    todaysRevenue: number;
+    averageOrderValue: number;
+    predictedTomorrow: number | null;
+    lowStockCount: number;
+    criticalCount: number;
+  };
+  chartData: { date: string; actual: number | null; predicted: number | null }[];
+  insights: string[];
+  topSellingItems: { item: string; sold: number; revenue: number }[];
+  lowStockItems: { item_name: string; current_qty: number; threshold_qty: number; status: string; unit: string }[];
+  expiryItems: { item_name: string; quantity: number; expiry_date: string; days_to_expiry: number }[];
+}
 
-const lowStockItems = [
-  {
-    item: 'Fresh Tomatoes',
-    current: 15,
-    threshold: 50,
-    status: 'critical',
-    image:
-      'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Mozzarella Cheese',
-    current: 8,
-    threshold: 20,
-    status: 'critical',
-    image:
-      'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Lettuce',
-    current: 25,
-    threshold: 40,
-    status: 'warning',
-    image:
-      'https://images.unsplash.com/photo-1556801712-76c8eb07bbc9?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Chicken Breast',
-    current: 30,
-    threshold: 50,
-    status: 'warning',
-    image:
-      'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-];
-
-const expiryItems = [
-  {
-    item: 'Milk (2L)',
-    expiry: '2 days',
-    quantity: 12,
-    image:
-      'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Ground Beef',
-    expiry: '3 days',
-    quantity: 8,
-    image:
-      'https://picsum.photos/seed/ground-beef/120/120',
-  },
-  {
-    item: 'Fresh Basil',
-    expiry: '1 day',
-    quantity: 5,
-    image:
-      'https://images.unsplash.com/photo-1618375569909-3c8616cf7733?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-];
-
-const topSellingItems = [
-  {
-    item: 'Chicken Rice Bowl',
-    sold: 86,
-    revenue: 1032,
-    image:
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Iced Latte',
-    sold: 74,
-    revenue: 888,
-    image:
-      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Nasi Lemak Set',
-    sold: 69,
-    revenue: 1035,
-    image:
-      'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Classic Burger',
-    sold: 57,
-    revenue: 969,
-    image:
-      'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-  {
-    item: 'Caesar Salad',
-    sold: 41,
-    revenue: 615,
-    image:
-      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=120&h=120&q=80',
-  },
-];
-
-const todaysRevenue = 4539;
-const todaysOrders = 215;
-const averageOrderValue = todaysRevenue / todaysOrders;
+const fetcher = async (url: string) => {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Dashboard API error: ${r.status}`);
+  return r.json();
+};
 
 export default function DashboardOverview() {
+  const [selectedLocation, setSelectedLocation] = useState('outlet-1');
+  const { data, isLoading: loading, error } = useSWR<DashboardData>(
+    `/api/dashboard?location=${selectedLocation}`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60_000 },
+  );
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-2">
+          <p className="text-destructive font-medium">Failed to load dashboard data</p>
+          <p className="text-sm text-muted-foreground">{error.message}</p>
+          <p className="text-xs text-muted-foreground">Check the terminal for Supabase error details</p>
+        </div>
+      </div>
+    );
+  }
+
+  const kpis = data?.kpis;
+  const aov = kpis?.averageOrderValue ?? 0;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-        <p className="text-muted-foreground mt-1">
-          Real-time insights and AI-powered recommendations for your business
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+          <p className="text-muted-foreground mt-1">
+            Real-time insights and AI-powered recommendations for your business
+          </p>
+        </div>
+        <LocationSelector
+          selectedLocation={selectedLocation}
+          onSelect={setSelectedLocation}
+        />
       </div>
 
+      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
         <KPICard
           title="Today's Orders"
-          value={todaysOrders}
+          value={loading ? '—' : (kpis?.todaysOrders ?? 0)}
           icon={ShoppingCart}
-          trend={{ value: '+8.5% from yesterday', positive: true }}
+          trend={{ value: 'Live from POS', positive: true }}
         />
         <KPICard
           title="Today's Revenue"
-          value={`RM ${todaysRevenue.toLocaleString()}`}
+          value={loading ? '—' : `RM ${(kpis?.todaysRevenue ?? 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={Wallet}
-          trend={{ value: '+12.2% from yesterday', positive: true }}
+          trend={{ value: 'Live from POS', positive: true }}
         />
         <KPICard
           title="Average Order Value"
-          value={`RM ${averageOrderValue.toFixed(2)}`}
+          value={loading ? '—' : `RM ${aov.toFixed(2)}`}
           icon={BarChart3}
           description="Revenue per completed order"
         />
         <KPICard
           title="Predicted Tomorrow"
-          value={230}
+          value={loading ? '—' : (kpis?.predictedTomorrow ?? 'N/A')}
           icon={TrendingUp}
-          description="Expected orders for Apr 22"
+          description="Expected orders tomorrow"
         />
         <KPICard
           title="Low Stock Alerts"
-          value={4}
+          value={loading ? '—' : (kpis?.lowStockCount ?? 0)}
           icon={AlertTriangle}
-          trend={{ value: '2 critical items', positive: false }}
+          trend={{ value: `${kpis?.criticalCount ?? 0} critical`, positive: false }}
         />
       </div>
 
+      {/* Chart + Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Orders Trend (Actual vs Predicted)</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={ordersData}>
-                <CartesianGrid key="grid-orders" strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  key="xaxis-orders"
-                  dataKey="date"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis key="yaxis-orders" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <Tooltip
-                  key="tooltip-orders"
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend key="legend-orders" />
-                <Line
-                  key="actual-orders"
-                  type="monotone"
-                  dataKey="actual"
-                  stroke="#010507"
-                  strokeWidth={2}
-                  name="Actual Orders"
-                  dot={{ fill: '#010507' }}
-                />
-                <Line
-                  key="predicted-orders"
-                  type="monotone"
-                  dataKey="predicted"
-                  stroke="#BEC2FF"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="Predicted Orders"
-                  dot={{ fill: '#BEC2FF' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">
+                Loading chart data...
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data?.chartData ?? []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="actual"
+                    stroke="#010507"
+                    strokeWidth={2}
+                    name="Actual Orders"
+                    dot={{ fill: '#010507' }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="predicted"
+                    stroke="#BEC2FF"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="Predicted Orders"
+                    dot={{ fill: '#BEC2FF' }}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        <AIInsightPanel
-          insights={[
-            'Tomorrow lunch peak is expected to increase by 15%. Recommend scheduling 2 additional staff members.',
-            'Fresh Tomatoes and Mozzarella are running critically low. Suggest immediate restock to avoid menu disruptions.',
-            'Weekend demand pattern shows 20% higher orders on Saturdays. Consider early prep on Friday evenings.',
-          ]}
-        />
+        <AIInsightPanel insights={loading ? ['Loading insights...'] : (data?.insights ?? [])} />
       </div>
 
+      {/* Bottom cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Selling Items */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Top-Selling Items (Today)</span>
-              <Badge variant="secondary">Top 5</Badge>
+              <Badge variant="secondary">Top {data?.topSellingItems.length ?? 0}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {topSellingItems.map((item, idx) => (
-                <div key={item.item} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline">#{idx + 1}</Badge>
-                    <img
-                      src={item.image}
-                      alt={item.item}
-                      className="h-10 w-10 rounded-md object-cover border"
-                      loading="lazy"
-                    />
-                    <div>
-                      <p className="text-sm font-medium">{item.item}</p>
-                      <p className="text-xs text-muted-foreground">{item.sold} sold</p>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (data?.topSellingItems.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">No sales recorded today yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {data!.topSellingItems.map((item, idx) => (
+                  <div key={item.item} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">#{idx + 1}</Badge>
+                      <div>
+                        <p className="text-sm font-medium">{item.item}</p>
+                        <p className="text-xs text-muted-foreground">{item.sold} sold</p>
+                      </div>
                     </div>
+                    <p className="text-sm font-semibold">RM {item.revenue.toFixed(2)}</p>
                   </div>
-                  <p className="text-sm font-semibold">RM {item.revenue.toLocaleString()}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Low Stock Alerts */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Low Stock Alerts</span>
-              <Badge variant="destructive">{lowStockItems.length}</Badge>
+              <Badge variant="destructive">{data?.lowStockItems.length ?? 0}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {lowStockItems.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={item.image}
-                      alt={item.item}
-                      className="h-10 w-10 rounded-md object-cover border"
-                      loading="lazy"
-                    />
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (data?.lowStockItems.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">All stock levels are healthy.</p>
+            ) : (
+              <div className="space-y-3">
+                {data!.lowStockItems.map((item) => (
+                  <div key={item.item_name} className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{item.item}</p>
+                      <p className="text-sm font-medium">{item.item_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.current} / {item.threshold} units
+                        {item.current_qty} / {item.threshold_qty} {item.unit}
                       </p>
                     </div>
+                    <Badge variant={item.status === 'critical' ? 'destructive' : 'secondary'}>
+                      {item.status}
+                    </Badge>
                   </div>
-                  <Badge variant={item.status === 'critical' ? 'destructive' : 'secondary'}>
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Items Near Expiry */}
         <Card>
           <CardHeader>
             <CardTitle>Items Near Expiry</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {expiryItems.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={item.image}
-                      alt={item.item}
-                      className="h-10 w-10 rounded-md object-cover border"
-                      loading="lazy"
-                    />
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (data?.expiryItems.length ?? 0) === 0 ? (
+              <p className="text-sm text-muted-foreground">No items near expiry.</p>
+            ) : (
+              <div className="space-y-3">
+                {data!.expiryItems.map((item) => (
+                  <div key={item.item_name} className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{item.item}</p>
+                      <p className="text-sm font-medium">{item.item_name}</p>
                       <p className="text-xs text-muted-foreground">{item.quantity} units</p>
                     </div>
+                    <Badge variant="outline">
+                      {item.days_to_expiry != null
+                        ? `${item.days_to_expiry} day${item.days_to_expiry !== 1 ? 's' : ''}`
+                        : new Date(item.expiry_date).toLocaleDateString('en-MY')}
+                    </Badge>
                   </div>
-                  <Badge variant="outline">{item.expiry}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,28 +1,48 @@
 'use client';
 
-import { mockInventory } from './mockInventory';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
-interface LocationSelectorProps {
-  selectedKiosk: string;
-  onSelect: (kioskId: string) => void;
+interface Location {
+  location_id: string;
+  location_name: string;
 }
 
-export function LocationSelector({ selectedKiosk, onSelect }: LocationSelectorProps) {
+interface LocationSelectorProps {
+  selectedLocation: string;
+  onSelect: (locationId: string) => void;
+}
+
+export function LocationSelector({ selectedLocation, onSelect }: LocationSelectorProps) {
+  const [locations, setLocations] = useState<Location[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('locations')
+      .select('location_id, location_name')
+      .order('location_name')
+      .then(({ data }) => {
+        if (data && data.length > 0) setLocations(data);
+      });
+  }, []);
+
+  if (locations.length === 0) return null;
+
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground font-medium">Location:</span>
-      <div className="flex gap-2">
-        {Object.values(mockInventory).map(kiosk => (
+      <div className="flex gap-2 flex-wrap">
+        {locations.map(loc => (
           <button
-            key={kiosk.kiosk_id}
-            onClick={() => onSelect(kiosk.kiosk_id)}
+            key={loc.location_id}
+            onClick={() => onSelect(loc.location_id)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
-              selectedKiosk === kiosk.kiosk_id
+              selectedLocation === loc.location_id
                 ? 'bg-primary text-primary-foreground shadow-md scale-105'
                 : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }`}
           >
-            {kiosk.kiosk_name}
+            {loc.location_name}
           </button>
         ))}
       </div>

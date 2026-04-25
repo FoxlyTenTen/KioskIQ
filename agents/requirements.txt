@@ -1,3 +1,4 @@
+supabase>=2.0.0
 a2a==0.44
 a2a-sdk==0.3.22
 ag-ui-adk==0.4.2

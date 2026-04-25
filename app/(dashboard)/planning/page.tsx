@@ -54,10 +54,7 @@ export default function PlanningPage() {
 
       {financialPlanData && (
         <div className="mb-4">
-          <FinancialPlanCard
-            data={financialPlanData}
-            onUpdate={setFinancialPlanData}
-          />
+          <FinancialPlanCard data={financialPlanData} onUpdate={setFinancialPlanData} />
         </div>
       )}
 

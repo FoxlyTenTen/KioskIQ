@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Pencil, Download, ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { InventoryItem } from './types';
 import {
@@ -59,16 +59,15 @@ export function StockTable({ items, onUpdateStock }: StockTableProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {items.map(item => {
+              {items.map((item, index) => {
                 const status = calculateAlertStatus(item);
                 const expiry = formatRelativeExpiry(item.expiry_date);
                 const stockPercent = Math.min(100, (item.current_stock / item.max_stock) * 100);
                 const isExpanded = expandedId === item.item_id;
 
                 return (
-                  <>
+                  <Fragment key={item.item_id ?? index}>
                     <tr
-                      key={item.item_id}
                       className={`${getStatusRowClass(status)} hover:bg-accent/30 transition-colors cursor-pointer`}
                       onClick={() => setExpandedId(isExpanded ? null : item.item_id)}
                     >
@@ -150,7 +149,7 @@ export function StockTable({ items, onUpdateStock }: StockTableProps) {
 
                     {/* Expanded row */}
                     {isExpanded && (
-                      <tr key={`${item.item_id}-expanded`} className={`${getStatusRowClass(status)} border-b border-border/30`}>
+                      <tr className={`${getStatusRowClass(status)} border-b border-border/30`}>
                         <td colSpan={7} className="px-6 pb-4">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2 p-4 bg-muted/20 rounded-xl">
                             <div>
@@ -179,7 +178,7 @@ export function StockTable({ items, onUpdateStock }: StockTableProps) {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
